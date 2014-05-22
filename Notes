@@ -18,7 +18,7 @@ pw pre_pull
 pw pull # wrapper: pre_pull; svn up; post_pull
 pw post_pull
 
-==================== Perl-based plans:
+==================== Perl-based (or refactored bash) plans:
 
 pw push
 pw push --abort
@@ -36,4 +36,21 @@ pw log              # master..branch
 pw log --branches   # --all master..
 pw log --all        # --all
 pw branches         # Alias to "pw log --branches"
+
+==================== Pushing as one unit
+
+echo '' > PATCHWORK_PUSH
+echo '# All lines above the first comment will be used as your svn commit message' >> PATCHWORK_PUSH
+echo '# ==================== (git) Files' >> PATCHWORK_PUSH
+git diff --name-status --relative master..JQueryMobile >> PATCHWORK_PUSH
+
+echo '' >> PATCHWORK_PUSH
+echo '# ==================== (git) Log' >> PATCHWORK_PUSH
+git log master..JQueryMobile >> PATCHWORK_PUSH
+
+echo '' >> PATCHWORK_PUSH
+echo '# ==================== (svn) Diff' >> PATCHWORK_PUSH
+svn diff >> PATCHWORK_PUSH
+
+cat PATCHWORK_PUSH | awk 'BEGIN {m = 1} /^#/{m = 0} (m == 1) {print $0} ' > SVN_COMMIT_MESSAGE
 
