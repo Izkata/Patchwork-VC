@@ -1,0 +1,39 @@
+
+==================== Current bash-function based one:
+
+pw log
+pw treelog
+pw branches
+
+pw sync
+
+pw squash_svn
+
+pw push
+pw abort_push
+# svn add/commit/etc here
+pw post_push
+
+pw pre_pull
+pw pull # wrapper: pre_pull; svn up; post_pull
+pw post_pull
+
+==================== Perl-based plans:
+
+pw push
+pw push --abort
+pw push --finish
+
+pw pull
+pw pull --finish
+pw pull --all  # "svn up" wrapper
+
+pw sync
+
+pw squash_svn
+
+pw log              # master..branch
+pw log --branches   # --all master..
+pw log --all        # --all
+pw branches         # Alias to "pw log --branches"
+
