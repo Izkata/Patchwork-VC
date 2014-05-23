@@ -189,9 +189,12 @@ patchwork_push() {
    # And apparently if I abort, post_commit moved it back onto master?  Scary, not sure why that worked..  It shouldn't have!
 
    local FILES=$(git diff --name-status --relative subversion..HEAD)
-   echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs svn add
-   echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs svn add
-   echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs svn rm
+   if echo "$FILES" | grep '^ *A' > /dev/null; then
+      echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs svn add
+   fi
+   if echo "$FILES" | grep '^ *D' > /dev/null; then
+      echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs svn rm
+   fi
 
    #svn commit
    #patchwork_post_commit
