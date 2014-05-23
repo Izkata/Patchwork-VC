@@ -73,24 +73,44 @@ patchwork_treelog() {
 #            B2
 #
 #   foo() {
-#      echo git checkout $1
-#      echo git rebase ${PWD##*/}
-#      pushd $1 > /dev/null
-#      for DIR in *; do
-#         [ -e "$DIR" ] && foo $DIR
+#      local PARENT=$1
+#      local CUR=
+#      for CUR in *; do
+#         if [ '*' == "$CUR" ];then break; fi
+#
+#         echo git checkout $CUR
+#         echo git branch OLD_$CUR
+#         echo git rebase --onto $PARENT OLD_$PARENT $CUR
+#         pushd $CUR > /dev/null
+#         foo $CUR
+#         popd > /dev/null
+#         echo git branch -D OLD_$CUR
 #      done
-#      popd > /dev/null
 #   }
 #
-#   cd subversion && foo master
+#   cd subversion
+#   git branch OLD_subversion
+#   // svn up -> svn commit -> etc
+#   foo subversion
+#   git branch -D OLD_subversion
+#   ->
 #   git checkout master
-#   git rebase subversion
+#   git branch OLD_master
+#   git rebase --onto subversion OLD_subversion master
 #   git checkout B1
-#   git rebase master
+#   git branch OLD_B1
+#   git rebase --onto master OLD_master B1
 #   git checkout B1_2
-#   git rebase B1
+#   git branch OLD_B1_2
+#   git rebase --onto B1 OLD_B1 B1_2
+#   git branch -D OLD_B1_2
+#   git branch -D OLD_B1
 #   git checkout B2
-#   git rebase master
+#   git branch OLD_B2
+#   git rebase --onto master OLD_master B2
+#   git branch -D OLD_B2
+#   git branch -D OLD_master
+
 patchwork_sync() {
    local CUR_BRANCH=$(util_current_branch)
 
