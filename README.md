@@ -69,8 +69,8 @@ Source the file (`$ source patchwork_vc.sh`) to use these.
 | pw post_pull    | Commits the local changes to `subversion`, the commit message being an `$ svn log` command you can copy/paste to see what the changes were.  Calls `$ pw sync` when complete |
 | pw push         | Rebase changes in the current branch onto `subversion`, add files that were added to `git` and remove files removed from `git`.  Do an `$ svn commit` after this |
 | pw post_push    | After your `$ svn commit`, do this to update your `subversion` branch.  Calls `$ pw sync` when complete |
-| pw abort_push   | If you've called `$ pw push`, then look at the svn diff and decided against it, restore your checkout to how it was before `$ pw push` |
-| pw squash_svn   | Sqaush the `subversion` branch down to 1 root commit.  Calls `$ pw sync` when complete |
+| pw abort_push   | If you've called `$ pw push`, then look at the svn diff and decided against it, restore git to how it was before `$ pw push` |
+| pw squash_svn   | Squash the `subversion` branch down to 1 root commit.  Calls `$ pw sync` when complete |
 | pw branches     | One-line tree view of `$ git log` for all your branches with `master` at the root |
 | pw log          | One-line tree view of `$ git log` for only the current branch with `master` at the root |
 | pw treelog      | One-line tree view of `$ git log` for everything, including commits to the `subversion` branch.  The log you see above under the "Limitations" section is a sample of this |
