@@ -279,17 +279,15 @@ if [ $EXEC ];then
    COMMAND=$1
    shift
    case "$COMMAND" in
-      pull)       echo command_pull "$@"
+      pull)       ;&
+      push)       ;&
+      sync)       ;&
+      squash_svn) ;&
+      log)        echo patchwork_command_$COMMAND "$@"
                   ;;
-      push)       echo command_push "$@"
+      branches)   echo patchwork_command_log --branches
                   ;;
-      sync)       echo command_sync "$@"
-                  ;;
-      squash_svn) echo command_squash_svn "$@"
-                  ;;
-      log)        echo command_log "$@"
-                  ;;
-      branches)   echo command_log --branches
+      *)          echo "Unknown command: $COMMAND"
                   ;;
    esac
 fi
