@@ -1,5 +1,5 @@
-
-# This is an experiment:  Can my combined svn+git be formalized into a "simple" set of commands?
+#!/bin/bash
+[ "$0" == "$BASH_SOURCE" ] && EXEC=1
 
 # ==================== Utils
 
@@ -274,4 +274,8 @@ patchwork() {
 pw() {
    patchwork "$@"
 }
+
+if [ $EXEC ];then
+   echo "Executing... $@"
+fi
 
