@@ -3,7 +3,7 @@ Patchwork-VC
 
 So, at work we use subversion for everything.  And it works well for us.  However, I've been using git at home, and at work it often becomes a hassle to keep around diff files if I'm working on a few things at once, or something is on hold and I don't want to commit yet, or even just in case there's a conflict when I `$ svn up`.
 
-So I decided to try something weird:  Plop a git repo right on top of my subversion checkout.
+I didn't particularly care for the descriptions of using `git-svn` as a bridge (it sounded kind of complicated and prone to breakage), so I decided to try something weird:  Plop a git repo right on top of my subversion checkout.
 
 And as of this writing, over the past two weeks, it's been working pretty well.  The hacked-together bash functions (and a dispatch function) are essentially what I've been using, although up until now they hadn't been version-controlled.  Several parts still have to be done manually, such as setting up the checkout (due to `.gitignore` being custom every time), and there are limitations as to what I can do.  But as long as I keep the mindset that this is a _subversion staging area_, not a _real_ repository, it works out.
 
