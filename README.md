@@ -5,7 +5,7 @@ So, at work we use subversion for everything.  And it works well for us.  Howeve
 
 I didn't particularly care for the descriptions of using `git-svn` as a bridge (it sounded kind of complicated and prone to breakage), so I decided to try something weird:  Plop a git repo right on top of my subversion checkout.
 
-And as of this writing, over the past two weeks, it's been working pretty well.  The hacked-together bash functions (and a dispatch function) are essentially what I've been using, although up until now they hadn't been version-controlled.  Several parts still have to be done manually, such as setting up the checkout (due to `.gitignore` being custom every time), and there are limitations as to what I can do.  But as long as I keep the mindset that this is a _subversion staging area_, not a _real_ repository, it works out.
+And as of this writing, over the past two weeks, it's been working pretty well.  The hacked-together bash functions in the initial commit are what came of continually running the same commands over and over.  Several parts still have to be done manually, such as setting up the checkout (due to `.gitignore` being custom every time), and there are limitations as to what I can do.  But as long as I keep the mindset that this is a _subversion staging area_, not a _real_ repository, it works out.
 
 Feel free to ignore the `Notes` file.  Those are my thoughts and plans for the future.  Not all of them will happen.
 
@@ -30,7 +30,7 @@ This makes extensive use of `rebase` and assumes specific branch structures:
 * `subversion` is assumed to always be a clean checkout of the svn repository.  At any time a `$ git checkout subversion` should result in `$ svn diff` showing zero changes.
 * `master` contains changes such as local settings or tweaks that you need for your checkout to work, but that should not be commited to svn.  I've also put some customized maintenance scripts in there, that aren't useful to anyone else.
 * Your work will branch off of `master`.  There are 3 such branches above.
-* When pushing one of your branches to svn, they are rebased from `master` to `subversion`, so that `$ svn diff` will only show that branch's changes.  The `subversion` branch is then updated, and all the other branches are rebased back on top of it.
+* When pushing one of your branches to svn, they are rebased from `master` to `subversion`, so that `$ svn diff` will only show that branch's changes, but nothing from `master`.  The `subversion` branch is then updated, and all the other branches are rebased back on top of it.
 
 This extensive use of `rebase` means that you cannot safely have any remotes to push or pull from.  History rewriting makes it a massive headache.
 
@@ -132,3 +132,4 @@ Eventually, the `subversion` branch will end up with a long tail that you probab
 * 94ffe4c (subversion) r196: 2014-05-24/0:17:29
 ```
 
+This isn't a bad thing - remember what I said back at the beginning:  Treat this as an svn staging area.  It's not a real repository.
