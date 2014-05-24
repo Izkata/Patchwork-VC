@@ -276,6 +276,21 @@ pw() {
 }
 
 if [ $EXEC ];then
-   echo "Executing... $@"
+   COMMAND=$1
+   shift
+   case "$COMMAND" in
+      pull)       echo command_pull "$@"
+                  ;;
+      push)       echo command_push "$@"
+                  ;;
+      sync)       echo command_sync "$@"
+                  ;;
+      squash_svn) echo command_squash_svn "$@"
+                  ;;
+      log)        echo command_log "$@"
+                  ;;
+      branches)   echo command_log --branches
+                  ;;
+   esac
 fi
 
