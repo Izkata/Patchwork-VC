@@ -189,14 +189,20 @@ patchwork_post_pull() {
 
    # For the new untracked files, have to add them all..
    local FILES=$(svn --username svn --password '' --no-auth-cache diff --summarize -r$((START - 1)):$END)
-   echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add  2> /dev/null
-   echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs git add  2> /dev/null
-   echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm   2> /dev/null
+   if echo "$FILES" | grep '^ *M' > /dev/null; then
+      echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add
+   fi
+   if echo "$FILES" | grep '^ *A' > /dev/null; then
+      echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs git add
+   fi
+   if echo "$FILES" | grep '^ *D' > /dev/null; then
+      echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm
+   fi
 
    git commit -a -m"svn log -r$END:$START" # This order is the same as "-l 4"
 
    git checkout $CUR_BRANCH
-   patchwork_sync # Also uses a CUR_BRANCH that was overwriting this one.  Hmm...
+   patchwork_sync
 }
 
 patchwork_push() {

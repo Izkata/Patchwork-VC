@@ -26,16 +26,16 @@ pw push --finish
 
 pw pull
 pw pull --finish
-pw pull --all  # "svn up" wrapper
+pw pull --all        # "svn up" wrapper
 
 pw sync
 
 pw squash_svn
 
-pw log              # master..branch
-pw log --branches   # --all master..
-pw log --all        # --all
-pw branches         # Alias to "pw log --branches"
+pw log               # master..branch
+pw log --branches    # --all master..
+pw log --all         # --all
+pw branches          # Alias to "pw log --branches"
 
 ==================== Pushing as one unit
 
