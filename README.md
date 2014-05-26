@@ -1,7 +1,7 @@
 Patchwork-VC
 ============
 
-So, at work we use subversion for everything.  And it works well for us.  However, I've been using git at home, and at work it often becomes a hassle to keep around diff files if I'm working on a few things at once, or something is on hold and I don't want to commit yet, or even just in case there's a conflict when I `$ svn up`.
+So, at work we use subversion for everything.  And it works well for us.  However, I've been using git at home, and at work it often becomes a hassle to keep around diff files if I'm working on a few things at once, or something is on hold and I don't want to commit yet, or even just in case there's a messy conflict coming on `$ svn up` due to a co-worker changing the same area of the code.
 
 I didn't particularly care for the descriptions of using `git-svn` as a bridge (it sounded kind of complicated and prone to breakage), so I decided to try something weird:  Plop a git repo right on top of my subversion checkout.
 
@@ -133,3 +133,14 @@ Eventually, the `subversion` branch will end up with a long tail that you probab
 ```
 
 This isn't a bad thing - remember what I said back at the beginning:  Treat this as an svn staging area.  It's not a real repository.
+
+Conflicts
+---------
+
+These are expected, and have happened a few times to me already.  Basically, during the `$ pw sync` is when a conflict might happen.
+
+Right now, it'll fail at a particular point and then have a string of errors due to git refusing to rebase when already in the middle of a rebase that has a conflict.  Resolution is simple:
+
+`$ git status` will show you what the current conflict is.  Resolve it as you would normally, and as git instructs, use `$ git rebase --continue` or `$ git rebase --skip`
+
+When that rebase completes, run `$ pw sync` again.  If it completes successfully, you're done.  If it does not, resolve and try again until it does.
