@@ -51,6 +51,18 @@ util_var_clear() {
 # local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
 # util_var_clear .pw_pushing
 
+util_is_within_git() {
+   local WITHIN=
+   local CUR_DIR=$(pwd)
+
+   while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
+   [ -e '.git' ] && WITHIN=1
+
+   cd $CUR_DIR
+   if [ "$WITHIN" ]; then return 0; fi
+   return 1
+}
+# if ! util_is_within_git; then ... ;fi
 
 # ==================== Currently in-use:
 
@@ -275,10 +287,6 @@ patchwork() {
       echo "Command not found: $COMMAND"
       return 1
    fi
-}
-
-pw() {
-   patchwork "$@"
 }
 
 if [ $EXEC ];then
