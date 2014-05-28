@@ -234,20 +234,23 @@ patchwork_push_message() {
    echo '# All lines above this first comment will be used as your svn commit message' >> PATCHWORK_PUSH
    echo '# ==================== (git) Files' >> PATCHWORK_PUSH
    git diff --name-status --relative subversion..$CUR_BRANCH >> PATCHWORK_PUSH
+   echo '# ==================== (git) End Files' >> PATCHWORK_PUSH
 
    echo '' >> PATCHWORK_PUSH
    echo '# ==================== (git) Log' >> PATCHWORK_PUSH
    git log subversion..$CUR_BRANCH >> PATCHWORK_PUSH
+   echo '# ==================== (git) End Log' >> PATCHWORK_PUSH
 
    echo '' >> PATCHWORK_PUSH
    echo '# ==================== (svn) Diff' >> PATCHWORK_PUSH
    svn diff >> PATCHWORK_PUSH
+   echo '# ==================== (svn) End Diff' >> PATCHWORK_PUSH
 
    if [ -z "$EDITOR" ];then local EDITOR=vim;fi
    $EDITOR PATCHWORK_PUSH
 
    cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' | tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d' > SVN_COMMIT_MESSAGE
-   rm -v PATCHWORK_PUSH
+   #rm -v PATCHWORK_PUSH
    echo SVN_COMMIT_MESSAGE
    cat SVN_COMMIT_MESSAGE
 }
