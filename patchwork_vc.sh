@@ -246,7 +246,7 @@ patchwork_push_message() {
    if [ -z "$EDITOR" ];then local EDITOR=vim;fi
    $EDITOR PATCHWORK_PUSH
 
-   cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' > SVN_COMMIT_MESSAGE
+   cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' | tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d' > SVN_COMMIT_MESSAGE
    rm -v PATCHWORK_PUSH
    echo SVN_COMMIT_MESSAGE
    cat SVN_COMMIT_MESSAGE
