@@ -125,7 +125,7 @@ patchwork_sync() {
    git checkout $CUR_BRANCH
 }
 
-patchwork_command_squash_svn() {
+command_squash_svn() {
    local CUR_BRANCH=$(util_current_branch)
 
    local BASE=$(git log | grep '^commit' | tail -1 | awk '{ print $2 }')
@@ -287,9 +287,9 @@ case "$COMMAND" in
    push)       ;&
    sync)       ;&
    squash_svn) ;&
-   log)        echo patchwork_command_$COMMAND "$@"
+   log)        echo command_$COMMAND "$@"
                ;;
-   branches)   echo patchwork_command_log --branches
+   branches)   echo command_log --branches
                ;;
    *)          echo "Unknown command: $COMMAND"
                ;;
