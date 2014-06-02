@@ -5,7 +5,11 @@
 util_current_branch() {
    echo "$(git branch | grep '\*' | awk '{ print $2 }')"
 }
-# local BRANCH=$(current_branch)
+
+util_branch_exists() {
+   git branch | grep " $1$" > /dev/null
+   return $?
+}
 
 util_var_save() {
    local FILE=$1
@@ -109,25 +113,23 @@ patchwork_treelog() {
 #   git branch -D OLD_B2
 #   git branch -D OLD_master
 
-patchwork_sync() {
-   local CUR_BRANCH=$(util_current_branch)
+command_sync() {
+   if ! util_branch_exists OLD_subversion; then
+      git branch -b OLD_subversion subversion
+   fi
 
-   git checkout master
-   git rebase subversion
+   git checkout -b OLD_master master
+   git rebase --onto subversion OLD_subversion master
 
-   echo "!!!!! This isn't correct - sub-branches should not be blindly rebased onto master!"
-   echo "--> Also have to die immediately on conflicts and handle a rebase"
-   for BRANCH in $(git branch | egrep -v " (master|subversion)$"); do
-      git checkout $BRANCH
-      git rebase master
+   for BRANCH in $(git branch | egrep -v ' (OLD_*)$' | egrep -v " (master|subversion)$"); do
+      git rebase --onto master OLD_master "$BRANCH"
    done
 
-   git checkout $CUR_BRANCH
+   git branch -D OLD_master
+   git branch -D OLD_subversion
 }
 
 command_squash_svn() {
-   local CUR_BRANCH=$(util_current_branch)
-
    local BASE=$(git log | grep '^commit' | tail -1 | awk '{ print $2 }')
    local SVN_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1)
    local SVN_DATE=$(svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
@@ -137,21 +139,7 @@ command_squash_svn() {
    git reset --soft $BASE
    git commit --amend -m"$SVN_REV: $SVN_DATE"
 
-   git checkout master
-   git branch OLD_master
-   git rebase --onto subversion OLD_subversion master
-
-   git branch -D OLD_subversion
-
-   echo "!!!!! This isn't correct - sub-branches should not be rebased onto master!"
-   echo "--> Also, sync can be changed to this OLD_* format and just called from here"
-   for BRANCH in $(git branch | egrep -v " (master|subversion|OLD_.*)$"); do
-      git checkout $BRANCH
-      git rebase --onto master OLD_master $BRANCH
-   done
-
-   git branch -D OLD_master
-   git checkout $CUR_BRANCH
+   command_sync
 }
 
 patchwork_pre_pull() {
