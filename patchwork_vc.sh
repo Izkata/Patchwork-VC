@@ -280,6 +280,8 @@ if [ ! -e '.git' ];then
    exit 1
 fi
 
+START_BRANCH=$(git branch | grep '\*' | awk '{ print $2 }')
+
 COMMAND=$1
 shift
 case "$COMMAND" in
@@ -294,4 +296,6 @@ case "$COMMAND" in
    *)          echo "Unknown command: $COMMAND"
                ;;
 esac
+
+git checkout $START_BRANCH
 
