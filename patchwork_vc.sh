@@ -1,5 +1,4 @@
 #!/bin/bash
-[ "$0" == "$BASH_SOURCE" ] && EXEC=1
 
 # ==================== Utils
 
@@ -50,19 +49,6 @@ util_var_clear() {
 # util_var_save .pw_pushing CUR_BRANCH "IE7_Fixes"
 # local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
 # util_var_clear .pw_pushing
-
-util_is_within_git() {
-   local WITHIN=
-   local CUR_DIR=$(pwd)
-
-   while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
-   [ -e '.git' ] && WITHIN=1
-
-   cd $CUR_DIR
-   if [ "$WITHIN" ]; then return 0; fi
-   return 1
-}
-# if ! util_is_within_git; then ... ;fi
 
 # ==================== Currently in-use:
 
@@ -289,20 +275,25 @@ patchwork() {
    fi
 }
 
-if [ $EXEC ];then
-   COMMAND=$1
-   shift
-   case "$COMMAND" in
-      pull)       ;&
-      push)       ;&
-      sync)       ;&
-      squash_svn) ;&
-      log)        echo patchwork_command_$COMMAND "$@"
-                  ;;
-      branches)   echo patchwork_command_log --branches
-                  ;;
-      *)          echo "Unknown command: $COMMAND"
-                  ;;
-   esac
+# ==================== Sanity checking
+while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
+if [ ! -e '.git' ];then
+   echo "Cannot be run outside of git repository"
+   exit 1
 fi
+
+COMMAND=$1
+shift
+case "$COMMAND" in
+   pull)       ;&
+   push)       ;&
+   sync)       ;&
+   squash_svn) ;&
+   log)        echo patchwork_command_$COMMAND "$@"
+               ;;
+   branches)   echo patchwork_command_log --branches
+               ;;
+   *)          echo "Unknown command: $COMMAND"
+               ;;
+esac
 
