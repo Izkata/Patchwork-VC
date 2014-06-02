@@ -125,10 +125,8 @@ patchwork_sync() {
    git checkout $CUR_BRANCH
 }
 
-patchwork_squash_svn() {
-   # Minor issue:  If I was the last to commit, and haven't "svn up"d to update the index,
-   #               then SVN_REV and SVN_DATE do not include my own changes
-   local CUR_BRANCH=$(git branch | grep '\*' | awk '{ print $2 }')
+patchwork_command_squash_svn() {
+   local CUR_BRANCH=$(util_current_branch)
 
    local BASE=$(git log | grep '^commit' | tail -1 | awk '{ print $2 }')
    local SVN_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1)
