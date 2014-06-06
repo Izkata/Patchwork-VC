@@ -268,7 +268,7 @@ patchwork_confirm_push() {
    fi
 
    echo '--------------------'
-   git diff --name-status --relative subversion..$CUR_BRANCH >> PATCHWORK_PUSH
+   git diff --name-status --relative subversion..$CUR_BRANCH
    echo ''
    cat SVN_COMMIT_MESSAGE
    echo -n 'Okay to commit? [y/N] '
