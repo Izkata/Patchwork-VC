@@ -207,8 +207,17 @@ patchwork_push() {
    fi
 
    patchwork_push_message
-   #svn commit
-   #patchwork_post_commit
+
+   if patchwork_confirm_push; then
+      svn commit -F SVN_COMMIT_MESSAGE
+      patchwork_post_push
+   else
+      patchwork_abort_push
+      echo ''
+      echo 'Push aborted'
+   fi
+
+   rm SVN_COMMIT_MESSAGE
    return 0
 }
 patchwork_push_message() {
@@ -234,9 +243,26 @@ patchwork_push_message() {
    $EDITOR PATCHWORK_PUSH
 
    cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' | tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d' > SVN_COMMIT_MESSAGE
-   #rm -v PATCHWORK_PUSH
-   echo SVN_COMMIT_MESSAGE
+   rm PATCHWORK_PUSH
+}
+patchwork_confirm_push() {
+   # Seems that newlines are already empty, so also trim off trailing whitespace...
+   if [ -z "$(cat SVN_COMMIT_MESSAGE | sed -e 's/ \+$//')" ] ;then
+      return 1
+   fi
+
+   echo '--------------------'
+   git diff --name-status --relative subversion..$CUR_BRANCH
+   echo ''
    cat SVN_COMMIT_MESSAGE
+   echo -n 'Okay to commit? [y/N] '
+   read Q
+
+   if echo $Q | grep '^y$'; then
+      return 0
+   else
+      return 1
+   fi
 }
 patchwork_abort_push() {
    CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
