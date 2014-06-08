@@ -331,20 +331,31 @@ fi
 
 START_BRANCH=$(git branch | grep '\*' | awk '{ print $2 }')
 
-COMMAND=$1
-shift
-case "$COMMAND" in
-   pull)       ;&
-   push)       ;&
-   sync)       ;&
-   squash_svn) ;&
-   log)        echo command_$COMMAND "$@"
-               ;;
-   branches)   echo command_log --branches
-               ;;
-   *)          echo "Unknown command: $COMMAND"
-               ;;
-esac
+SVN_USER=''
+SVN_PASS=''
+
+for ARG in "$@"; do
+   shift
+   case "$ARG" in
+      --username) SVN_USER=$1
+                  ;;
+      --password) SVN_PASS=$1
+                  ;;
+      pull)       ;&
+      push)       ;&
+      sync)       ;&
+      squash_svn) ;&
+      log)        echo command_$COMMAND "$@"
+                  break
+                  ;;
+      branches)   echo command_log --branches
+                  break
+                  ;;
+      *)          echo "Unknown command: $COMMAND"
+                  break
+                  ;;
+   esac
+done
 
 git checkout $START_BRANCH
 
