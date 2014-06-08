@@ -54,6 +54,16 @@ util_var_clear() {
 # local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
 # util_var_clear .pw_pushing
 
+run_svn() {
+   SVN_USER_CMD=
+   SVN_PASS_CMD=
+   EXTRA=
+   [ "$SVN_USER" ] && SVN_USER_CMD="--username $SVN_USER"
+   [ "$SVN_PASS" ] && SVN_PASS_CMD="--username $SVN_PASS"
+   [ "$SVN_USER" -o "$SVN_PASS" ] && EXTRA='--no-auth-cache'
+   svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
+}
+
 # ==================== Currently in-use:
 
 command_log() {
@@ -134,8 +144,8 @@ command_sync() {
 
 command_squash_svn() {
    local BASE=$(git rev-list --all | tail -1)
-   local SVN_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1)
-   local SVN_DATE=$(svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
+   local SVN_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1)
+   local SVN_DATE=$(run_svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
 
    git checkout subversion
    git branch OLD_subversion
@@ -148,7 +158,7 @@ command_squash_svn() {
 command_pull() {
    if [ '--prepare' == "$1" ]; then
       local CUR_BRANCH=$(util_current_branch)
-      local START_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+      local START_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
 
       util_var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
       util_var_save .pw_pulling START_REV "$START_REV"
@@ -160,19 +170,19 @@ command_pull() {
       START_REV=$(util_var_load .pw_pulling START_REV)
       util_var_clear .pw_pulling
 
-      local END_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+      local END_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
 
       # This is done because we want to both exclude START_REV (it was already pulled), and
       # list the specific revisions for us that apply:
 
-      local LOGS=$(svn log -r$((START_REV + 1)):$END_REV --username svn --password '' --no-auth-cache)
+      local LOGS=$(run_svn log -r$((START_REV + 1)):$END_REV )
       local REVS=$(echo "$LOGS" | egrep -o '^r[0-9]+' | sed -e 's/r//')
 
       local START=$(echo "$REVS" | head -1)
       local END=$(echo "$REVS" | tail -1)
 
       # For the new untracked files, have to add them all..
-      local FILES=$(svn --username svn --password '' --no-auth-cache diff --summarize -r$((START - 1)):$END)
+      local FILES=$(run_svn diff --summarize -r$((START - 1)):$END)
       if echo "$FILES" | grep '^ *M' > /dev/null; then
          echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add
       fi
