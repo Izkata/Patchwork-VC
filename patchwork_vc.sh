@@ -142,51 +142,55 @@ command_squash_svn() {
    command_sync
 }
 
-patchwork_pre_pull() {
-   local CUR_BRANCH=$(util_current_branch)
-   local START_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+command_pull() {
+   if [ '--prepare' == "$1" ]; then
+      local CUR_BRANCH=$(util_current_branch)
+      local START_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
 
-   util_var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
-   util_var_save .pw_pulling START_REV "$START_REV"
-   git checkout subversion
-}
-patchwork_pull() {
-   patchwork_pre_pull
-   svn up --username svn --password '' --no-auth-cache
-   patchwork_post_pull
-}
-patchwork_post_pull() {
-   CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
-   START_REV=$(util_var_load .pw_pulling START_REV)
-   util_var_clear .pw_pulling
-
-   local END_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
-
-   # This is done because we want to both exclude START_REV (it was already pulled), and
-   # list the specific revisions for us that apply:
-
-   local LOGS=$(svn log -r$((START_REV + 1)):$END_REV --username svn --password '' --no-auth-cache)
-   local REVS=$(echo "$LOGS" | egrep -o '^r[0-9]+' | sed -e 's/r//')
-
-   local START=$(echo "$REVS" | head -1)
-   local END=$(echo "$REVS" | tail -1)
-
-   # For the new untracked files, have to add them all..
-   local FILES=$(svn --username svn --password '' --no-auth-cache diff --summarize -r$((START - 1)):$END)
-   if echo "$FILES" | grep '^ *M' > /dev/null; then
-      echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add
+      util_var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
+      util_var_save .pw_pulling START_REV "$START_REV"
+      git checkout subversion
+      return 0
    fi
-   if echo "$FILES" | grep '^ *A' > /dev/null; then
-      echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs git add
-   fi
-   if echo "$FILES" | grep '^ *D' > /dev/null; then
-      echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm
+   if [ '--complete' == "$1" ];then
+      CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
+      START_REV=$(util_var_load .pw_pulling START_REV)
+      util_var_clear .pw_pulling
+
+      local END_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+
+      # This is done because we want to both exclude START_REV (it was already pulled), and
+      # list the specific revisions for us that apply:
+
+      local LOGS=$(svn log -r$((START_REV + 1)):$END_REV --username svn --password '' --no-auth-cache)
+      local REVS=$(echo "$LOGS" | egrep -o '^r[0-9]+' | sed -e 's/r//')
+
+      local START=$(echo "$REVS" | head -1)
+      local END=$(echo "$REVS" | tail -1)
+
+      # For the new untracked files, have to add them all..
+      local FILES=$(svn --username svn --password '' --no-auth-cache diff --summarize -r$((START - 1)):$END)
+      if echo "$FILES" | grep '^ *M' > /dev/null; then
+         echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add
+      fi
+      if echo "$FILES" | grep '^ *A' > /dev/null; then
+         echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs git add
+      fi
+      if echo "$FILES" | grep '^ *D' > /dev/null; then
+         echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm
+      fi
+
+      git commit -a -m"svn log -r$END:$START" # This order is the same as "-l 4"
+
+      git checkout $CUR_BRANCH
+      patchwork_sync
+      return 0
    fi
 
-   git commit -a -m"svn log -r$END:$START" # This order is the same as "-l 4"
-
-   git checkout $CUR_BRANCH
-   patchwork_sync
+   command_pull --prepare
+   svn up
+   command_pull --complete
+   return 0
 }
 
 patchwork_push() {
