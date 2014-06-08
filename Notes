@@ -37,6 +37,11 @@ pw log --branches    # --all master..
 pw log --all         # --all
 pw branches          # Alias to "pw log --branches"
 
-==================== Alternatives
+==================== Misc
 
 Instead of "master~1..", this may be a better revision selectior:  "master^!"
+
+Enabling rerere might help with the sync rebasing; a couple times back at the start I was
+   repeating the same resolution, but that was generally after screwing up the repo during
+   a pw-pull.  It hasn't happened recently, but keep in mind...
+
