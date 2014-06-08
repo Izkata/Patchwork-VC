@@ -308,20 +308,6 @@ patchwork_patch() {
    #    -> $ pw post_push
 }
 
-patchwork() {
-   COMMAND=$1
-
-   if [ -z "$COMMAND" ] || echo $COMMAND | egrep -i '^help$' > /dev/null; then
-      echo "Currently available commands: branches, sync, pull"
-      return 0
-   fi
-
-   if ! patchwork_$COMMAND ;then
-      echo "Command not found: $COMMAND"
-      return 1
-   fi
-}
-
 # ==================== Sanity checking
 while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
 if [ ! -e '.git' ];then
