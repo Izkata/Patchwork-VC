@@ -56,14 +56,17 @@ util_var_clear() {
 
 # ==================== Currently in-use:
 
-patchwork_branches() {
-   git log --graph --decorate --oneline --color --all master~1..
-}
-patchwork_log() {
+command_log() {
+   if [ '--all' == "$1" ];then
+      git log --graph --decorate --oneline --color --all
+      return 0
+   fi
+   if [ '--branches' == "$1" ];then
+      git log --graph --decorate --oneline --color --all master~1..
+      return 0
+   fi
+
    git log --graph --decorate --oneline --color master~1..
-}
-patchwork_treelog() {
-   git log --graph --decorate --oneline --color --all
 }
 
 # This is better with metadata:
