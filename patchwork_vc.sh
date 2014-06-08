@@ -133,7 +133,7 @@ command_sync() {
 }
 
 command_squash_svn() {
-   local BASE=$(git log | grep '^commit' | tail -1 | awk '{ print $2 }')
+   local BASE=$(git rev-list --all | tail -1)
    local SVN_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1)
    local SVN_DATE=$(svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
 
