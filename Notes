@@ -21,12 +21,11 @@ pw post_pull
 ==================== Perl-based (or refactored bash) plans:
 
 pw push
-pw push --abort
-pw push --finish
 
-pw pull
-pw pull --finish
-pw pull --all        # "svn up" wrapper
+pw pull           # Everything including "svn up"
+pw pull --prepare # Lower-level command if you use your own "svn up" wrapper
+pw pull --finish  # Lower-level command if you use your own "svn up" wrapper
+("pw pull" === "pw pull --prepare; svn up; pw pull --finish")
 
 pw sync
 
@@ -36,6 +35,15 @@ pw log               # master..branch
 pw log --branches    # --all master..
 pw log --all         # --all
 pw branches          # Alias to "pw log --branches"
+
+----------
+All commands will take user/pass arguments for svn:
+
+   pw pull
+   pw --username svn_user pull
+   pw --username svn_user --password svn_pass pull
+
+Using these automatically includes "--no-auth-cache"
 
 ==================== Alternatives
 
