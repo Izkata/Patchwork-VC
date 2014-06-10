@@ -55,13 +55,13 @@ util_var_clear() {
 # ==================== Currently in-use:
 
 patchwork_branches() {
-   git log --graph --decorate --oneline --color --all master~1..
+   git log --graph --decorate --oneline --color --all master~1.. | less -SEXIER
 }
 patchwork_log() {
-   git log --graph --decorate --oneline --color master~1..
+   git log --graph --decorate --oneline --color master~1.. | less -SEXIER
 }
 patchwork_treelog() {
-   git log --graph --decorate --oneline --color --all
+   git log --graph --decorate --oneline --color --all | less -SEXIER
 }
 
 # This is better with metadata:
