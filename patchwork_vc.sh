@@ -201,7 +201,7 @@ command_pull() {
    fi
 
    command_pull --prepare
-   svn up
+   run_svn up
    command_pull --complete
    return 0
 }
@@ -226,7 +226,7 @@ patchwork_push() {
    patchwork_push_message
 
    if patchwork_confirm_push; then
-      svn commit -F SVN_COMMIT_MESSAGE
+      run_svn commit -F SVN_COMMIT_MESSAGE
       patchwork_post_push
    else
       patchwork_abort_push
