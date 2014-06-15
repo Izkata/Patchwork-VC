@@ -55,9 +55,9 @@ util_var_clear() {
 # util_var_clear .pw_pushing
 
 run_svn() {
-   SVN_USER_CMD=
-   SVN_PASS_CMD=
-   EXTRA=
+   local SVN_USER_CMD=
+   local SVN_PASS_CMD=
+   local EXTRA=
    [ "$SVN_USER" ] && SVN_USER_CMD="--username $SVN_USER"
    [ "$SVN_PASS" ] && SVN_PASS_CMD="--username $SVN_PASS"
    [ "$SVN_USER" -o "$SVN_PASS" ] && EXTRA='--no-auth-cache'
@@ -173,8 +173,8 @@ command_pull() {
       return 0
    fi
    if [ '--complete' == "$1" ];then
-      CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
-      START_REV=$(util_var_load .pw_pulling START_REV)
+      local CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
+      local START_REV=$(util_var_load .pw_pulling START_REV)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'pull --complete': No current branch"
          return 1
@@ -238,7 +238,7 @@ command_push() {
       return 0
    fi
    if [ '--complete' == "$1" ]; then
-      CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+      local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --complete': No current branch"
          return 1
@@ -252,7 +252,7 @@ command_push() {
       return 0
    fi
    if [ '--abort' == "$1" ]; then
-      CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+      local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --abort': No current branch"
          return 1
