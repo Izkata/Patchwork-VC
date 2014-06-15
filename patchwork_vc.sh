@@ -2,16 +2,16 @@
 
 # ==================== Utils
 
-util_current_branch() {
+current_branch() {
    echo "$(git branch | grep '\*' | awk '{ print $2 }')"
 }
 
-util_branch_exists() {
+branch_exists() {
    git branch | grep " $1$" > /dev/null
    return $?
 }
 
-util_var_save() {
+var_save() {
    local FILE=$1
    local NAME=$2
    local VAL=$3
@@ -29,7 +29,7 @@ util_var_save() {
    echo "$NAME='$VAL'" >> "$FILE"
    cd "$CUR_DIR"
 }
-util_var_load() {
+var_load() {
    local FILE=$1
    local NAME=$2
 
@@ -40,7 +40,7 @@ util_var_load() {
    echo "${!NAME}"
    cd "$CUR_DIR"
 }
-util_var_clear() {
+var_clear() {
    local FILE=$1
 
    local CUR_DIR=$(pwd)
@@ -50,9 +50,9 @@ util_var_clear() {
    rm "$FILE"
    cd "$CUR_DIR"
 }
-# util_var_save .pw_pushing CUR_BRANCH "IE7_Fixes"
-# local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
-# util_var_clear .pw_pushing
+# var_save .pw_pushing CUR_BRANCH "IE7_Fixes"
+# local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
+# var_clear .pw_pushing
 
 run_svn() {
    local SVN_USER_CMD=
@@ -134,7 +134,7 @@ command_log() {
 #   git branch -D OLD_master
 
 command_sync() {
-   if ! util_branch_exists OLD_subversion; then
+   if ! branch_exists OLD_subversion; then
       git branch -b OLD_subversion subversion
    fi
 
@@ -164,17 +164,17 @@ command_squash_svn() {
 
 command_pull() {
    if [ '--prepare' == "$1" ]; then
-      local CUR_BRANCH=$(util_current_branch)
+      local CUR_BRANCH=$(current_branch)
       local START_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
 
-      util_var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
-      util_var_save .pw_pulling START_REV "$START_REV"
+      var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
+      var_save .pw_pulling START_REV "$START_REV"
       git checkout subversion
       return 0
    fi
    if [ '--complete' == "$1" ];then
-      local CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
-      local START_REV=$(util_var_load .pw_pulling START_REV)
+      local CUR_BRANCH=$(var_load .pw_pulling CUR_BRANCH)
+      local START_REV=$(var_load .pw_pulling START_REV)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'pull --complete': No current branch"
          return 1
@@ -183,7 +183,7 @@ command_pull() {
          echo "Error on 'pull --complete': No initial revision"
          return 1
       fi
-      util_var_clear .pw_pulling
+      var_clear .pw_pulling
 
       local END_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
 
@@ -223,8 +223,8 @@ command_pull() {
 
 command_push() {
    if [ '--prepare' == "$1" ]; then
-      local CUR_BRANCH=$(util_current_branch)
-      util_var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
+      local CUR_BRANCH=$(current_branch)
+      var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
 
       git rebase --onto subversion master $CUR_BRANCH
 
@@ -238,12 +238,12 @@ command_push() {
       return 0
    fi
    if [ '--complete' == "$1" ]; then
-      local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+      local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --complete': No current branch"
          return 1
       fi
-      util_var_clear .pw_pushing
+      var_clear .pw_pushing
 
       git checkout subversion
       git merge $CUR_BRANCH # Fast-forward
@@ -252,12 +252,12 @@ command_push() {
       return 0
    fi
    if [ '--abort' == "$1" ]; then
-      local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+      local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --abort': No current branch"
          return 1
       fi
-      util_var_clear .pw_pushing
+      var_clear .pw_pushing
 
       git rebase --onto master subversion $CUR_BRANCH
       return 0
@@ -279,7 +279,7 @@ command_push() {
    return 0
 }
 push_generate_message() {
-   local CUR_BRANCH=$(util_current_branch)
+   local CUR_BRANCH=$(current_branch)
 
    echo '' > PATCHWORK_PUSH
    echo '# All lines above this first comment will be used as your svn commit message' >> PATCHWORK_PUSH
