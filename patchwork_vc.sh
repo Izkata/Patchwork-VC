@@ -324,7 +324,7 @@ push_confirm() {
    fi
 }
 
-patchwork_patch() {
+command_patch() {
    echo "Not Implemented"
    # Basic idea - if I have a couple-line change, the whole branch/commit/push is a lot.
    # So:
