@@ -252,7 +252,6 @@ command_push() {
    fi
 
    rm SVN_COMMIT_MESSAGE
-   git checkout $CUR_BRANCH
    return 0
 }
 push_generate_message() {
