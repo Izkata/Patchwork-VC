@@ -350,7 +350,7 @@ if [ ! -e '.git' ];then
    exit 1
 fi
 
-START_BRANCH=$(git branch | grep '\*' | awk '{ print $2 }')
+START_BRANCH=$(current_branch)
 
 SVN_USER=''
 SVN_PASS=''
