@@ -366,13 +366,13 @@ for ARG in "$@"; do
       push)       ;&
       sync)       ;&
       squash_svn) ;&
-      log)        echo command_$COMMAND "$@"
+      log)        echo command_$ARG "$@"
                   break
                   ;;
       branches)   echo command_log --branches
                   break
                   ;;
-      *)          echo "Unknown command: $COMMAND"
+      *)          echo "Unknown command: $ARG"
                   break
                   ;;
    esac
