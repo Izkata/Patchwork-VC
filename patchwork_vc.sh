@@ -208,10 +208,11 @@ command_pull() {
          echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm
       fi
 
+      git branch OLD_subversion
       git commit -a -m"svn log -r$END:$START" # This order is the same as "-l 4"
 
       git checkout $CUR_BRANCH
-      patchwork_sync
+      command_sync
       return 0
    fi
 
@@ -248,7 +249,7 @@ command_push() {
       git checkout subversion
       git merge $CUR_BRANCH # Fast-forward
       git checkout $CUR_BRANCH
-      patchwork_sync
+      command_sync
       return 0
    fi
    if [ '--abort' == "$1" ]; then
