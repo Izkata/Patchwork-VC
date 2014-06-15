@@ -206,39 +206,50 @@ command_pull() {
    return 0
 }
 
-patchwork_push() {
+command_push() {
    local CUR_BRANCH=$(util_current_branch)
-   util_var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
 
-   git rebase --onto subversion master $CUR_BRANCH
+   if [ '--prepare' == "$1" ]; then
+      git rebase --onto subversion master $CUR_BRANCH
 
-   # Up until here is confirmed to work fine
-   # And apparently if I abort, post_commit moved it back onto master?  Scary, not sure why that worked..  It shouldn't have!
-
-   local FILES=$(git diff --name-status --relative subversion..HEAD)
-   if echo "$FILES" | grep '^ *A' > /dev/null; then
-      echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs svn add
+      local FILES=$(git diff --name-status --relative subversion..HEAD)
+      if echo "$FILES" | grep '^ *A' > /dev/null; then
+         echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs svn add
+      fi
+      if echo "$FILES" | grep '^ *D' > /dev/null; then
+         echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs svn rm
+      fi
+      return 0
    fi
-   if echo "$FILES" | grep '^ *D' > /dev/null; then
-      echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs svn rm
+   if [ '--complete' == "$1" ]; then
+      git checkout subversion
+      git merge $CUR_BRANCH # Fast-forward
+      git checkout $CUR_BRANCH
+      patchwork_sync
+      return 0
+   fi
+   if [ '--abort' == "$1" ]; then
+      git rebase --onto master subversion $CUR_BRANCH
    fi
 
-   patchwork_push_message
+   command_push --prepare
+   push_generate_message
 
-   if patchwork_confirm_push; then
+   if push_confirm; then
       run_svn commit -F SVN_COMMIT_MESSAGE
-      patchwork_post_push
+      command_push --complete
    else
-      patchwork_abort_push
+      command_push --abort
       echo ''
       echo 'Push aborted'
    fi
 
    rm SVN_COMMIT_MESSAGE
+   git checkout $CUR_BRANCH
    return 0
 }
-patchwork_push_message() {
-   CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+push_generate_message() {
+   local CUR_BRANCH=$(util_current_branch)
 
    echo '' > PATCHWORK_PUSH
    echo '# All lines above this first comment will be used as your svn commit message' >> PATCHWORK_PUSH
@@ -262,7 +273,7 @@ patchwork_push_message() {
    cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' | tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d' > SVN_COMMIT_MESSAGE
    rm PATCHWORK_PUSH
 }
-patchwork_confirm_push() {
+push_confirm() {
    # Seems that newlines are already empty, so also trim off trailing whitespace...
    if [ -z "$(cat SVN_COMMIT_MESSAGE | sed -e 's/ \+$//')" ] ;then
       return 1
@@ -280,22 +291,6 @@ patchwork_confirm_push() {
    else
       return 1
    fi
-}
-patchwork_abort_push() {
-   CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
-   util_var_clear .pw_pushing
-
-   git rebase --onto master subversion $CUR_BRANCH
-   git checkout $CUR_BRANCH
-}
-patchwork_post_push() {
-   CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
-   util_var_clear .pw_pushing
-
-   git checkout subversion
-   git merge $CUR_BRANCH # Fast-forward
-   git checkout $CUR_BRANCH
-   patchwork_sync
 }
 
 patchwork_patch() {
