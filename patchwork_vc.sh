@@ -175,6 +175,14 @@ command_pull() {
    if [ '--complete' == "$1" ];then
       CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
       START_REV=$(util_var_load .pw_pulling START_REV)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'pull --complete': No current branch"
+         return 1
+      fi
+      if [ -z "$START_REV" ];then
+         echo "Error on 'pull --complete': No initial revision"
+         return 1
+      fi
       util_var_clear .pw_pulling
 
       local END_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
@@ -214,9 +222,10 @@ command_pull() {
 }
 
 command_push() {
-   local CUR_BRANCH=$(util_current_branch)
-
    if [ '--prepare' == "$1" ]; then
+      local CUR_BRANCH=$(util_current_branch)
+      util_var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
+
       git rebase --onto subversion master $CUR_BRANCH
 
       local FILES=$(git diff --name-status --relative subversion..HEAD)
@@ -229,6 +238,13 @@ command_push() {
       return 0
    fi
    if [ '--complete' == "$1" ]; then
+      CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'push --complete': No current branch"
+         return 1
+      fi
+      util_var_clear .pw_pushing
+
       git checkout subversion
       git merge $CUR_BRANCH # Fast-forward
       git checkout $CUR_BRANCH
@@ -236,6 +252,13 @@ command_push() {
       return 0
    fi
    if [ '--abort' == "$1" ]; then
+      CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'push --abort': No current branch"
+         return 1
+      fi
+      util_var_clear .pw_pushing
+
       git rebase --onto master subversion $CUR_BRANCH
    fi
 
