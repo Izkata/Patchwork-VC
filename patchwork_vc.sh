@@ -1,14 +1,17 @@
 #!/bin/bash
-[ "$0" == "$BASH_SOURCE" ] && EXEC=1
 
 # ==================== Utils
 
-util_current_branch() {
+current_branch() {
    echo "$(git branch | grep '\*' | awk '{ print $2 }')"
 }
-# local BRANCH=$(current_branch)
 
-util_var_save() {
+branch_exists() {
+   git branch | grep " $1$" > /dev/null
+   return $?
+}
+
+var_save() {
    local FILE=$1
    local NAME=$2
    local VAL=$3
@@ -26,7 +29,7 @@ util_var_save() {
    echo "$NAME='$VAL'" >> "$FILE"
    cd "$CUR_DIR"
 }
-util_var_load() {
+var_load() {
    local FILE=$1
    local NAME=$2
 
@@ -37,7 +40,7 @@ util_var_load() {
    echo "${!NAME}"
    cd "$CUR_DIR"
 }
-util_var_clear() {
+var_clear() {
    local FILE=$1
 
    local CUR_DIR=$(pwd)
@@ -47,21 +50,40 @@ util_var_clear() {
    rm "$FILE"
    cd "$CUR_DIR"
 }
-# util_var_save .pw_pushing CUR_BRANCH "IE7_Fixes"
-# local CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
-# util_var_clear .pw_pushing
+# var_save .pw_pushing CUR_BRANCH "IE7_Fixes"
+# local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
+# var_clear .pw_pushing
 
+run_svn() {
+   local SVN_USER_CMD=
+   local SVN_PASS_CMD=
+   local EXTRA=
+   [ "$SVN_USER" ] && SVN_USER_CMD="--username $SVN_USER"
+   [ "$SVN_PASS" ] && SVN_PASS_CMD="--username $SVN_PASS"
+   [ "$SVN_USER" -o "$SVN_PASS" ] && EXTRA='--no-auth-cache'
+   svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
+}
+
+trim_head_tail() {
+   tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d'
+}
+copy_to() {
+   awk " /$1/{lose = 1} (lose == 0) {print \$0} "
+}
 
 # ==================== Currently in-use:
 
-patchwork_branches() {
-   git log --graph --decorate --oneline --color --all master~1.. | less -SEXIER
-}
-patchwork_log() {
+command_log() {
+   if [ '--all' == "$1" ];then
+      git log --graph --decorate --oneline --color --all | less -SEXIER
+      return 0
+   fi
+   if [ '--branches' == "$1" ];then
+      git log --graph --decorate --oneline --color --all master~1.. | less -SEXIER
+      return 0
+   fi
+
    git log --graph --decorate --oneline --color master~1.. | less -SEXIER
-}
-patchwork_treelog() {
-   git log --graph --decorate --oneline --color --all | less -SEXIER
 }
 
 # This is better with metadata:
@@ -111,124 +133,145 @@ patchwork_treelog() {
 #   git branch -D OLD_B2
 #   git branch -D OLD_master
 
-patchwork_sync() {
-   local CUR_BRANCH=$(util_current_branch)
+command_sync() {
+   if ! branch_exists OLD_subversion; then
+      git branch -b OLD_subversion subversion
+   fi
 
-   git checkout master
-   git rebase subversion
+   git checkout -b OLD_master master
+   git rebase --onto subversion OLD_subversion master
 
-   echo "!!!!! This isn't correct - sub-branches should not be blindly rebased onto master!"
-   echo "--> Also have to die immediately on conflicts and handle a rebase"
-   for BRANCH in $(git branch | egrep -v " (master|subversion)$"); do
-      git checkout $BRANCH
-      git rebase master
+   for BRANCH in $(git branch | egrep -v ' (OLD_*)$' | egrep -v " (master|subversion)$"); do
+      git rebase --onto master OLD_master "$BRANCH"
    done
 
-   git checkout $CUR_BRANCH
+   git branch -D OLD_master
+   git branch -D OLD_subversion
 }
 
-patchwork_squash_svn() {
-   # Minor issue:  If I was the last to commit, and haven't "svn up"d to update the index,
-   #               then SVN_REV and SVN_DATE do not include my own changes
-   local CUR_BRANCH=$(git branch | grep '\*' | awk '{ print $2 }')
-
+command_squash_svn() {
    local BASE=$(git rev-list --all | tail -1)
-   local SVN_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1)
-   local SVN_DATE=$(svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
+   local SVN_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1)
+   local SVN_DATE=$(run_svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
 
    git checkout subversion
    git branch OLD_subversion
    git reset --soft $BASE
    git commit --amend -m"$SVN_REV: $SVN_DATE"
 
-   git checkout master
-   git branch OLD_master
-   git rebase --onto subversion OLD_subversion master
-
-   git branch -D OLD_subversion
-
-   echo "!!!!! This isn't correct - sub-branches should not be rebased onto master!"
-   echo "--> Also, sync can be changed to this OLD_* format and just called from here"
-   for BRANCH in $(git branch | egrep -v " (master|subversion|OLD_.*)$"); do
-      git checkout $BRANCH
-      git rebase --onto master OLD_master $BRANCH
-   done
-
-   git branch -D OLD_master
-   git checkout $CUR_BRANCH
+   command_sync
 }
 
-patchwork_pre_pull() {
-   local CUR_BRANCH=$(util_current_branch)
-   local START_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+command_pull() {
+   if [ '--prepare' == "$1" ]; then
+      local CUR_BRANCH=$(current_branch)
+      local START_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
 
-   util_var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
-   util_var_save .pw_pulling START_REV "$START_REV"
-   git checkout subversion
+      var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
+      var_save .pw_pulling START_REV "$START_REV"
+      git checkout subversion
+      return 0
+   fi
+   if [ '--complete' == "$1" ];then
+      local CUR_BRANCH=$(var_load .pw_pulling CUR_BRANCH)
+      local START_REV=$(var_load .pw_pulling START_REV)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'pull --complete': No current branch"
+         return 1
+      fi
+      if [ -z "$START_REV" ];then
+         echo "Error on 'pull --complete': No initial revision"
+         return 1
+      fi
+      var_clear .pw_pulling
+
+      local END_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+
+      # This is done because we want to both exclude START_REV (it was already pulled), and
+      # list the specific revisions for us that apply:
+
+      local LOGS=$(run_svn log -r$((START_REV + 1)):$END_REV )
+      local REVS=$(echo "$LOGS" | egrep -o '^r[0-9]+' | sed -e 's/r//')
+
+      local START=$(echo "$REVS" | head -1)
+      local END=$(echo "$REVS" | tail -1)
+
+      # For the new untracked files, have to add them all..
+      local FILES=$(run_svn diff --summarize -r$((START - 1)):$END)
+      if echo "$FILES" | grep '^ *M' > /dev/null; then
+         echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add
+      fi
+      if echo "$FILES" | grep '^ *A' > /dev/null; then
+         echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs git add
+      fi
+      if echo "$FILES" | grep '^ *D' > /dev/null; then
+         echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm
+      fi
+
+      git branch OLD_subversion
+      git commit -a -m"svn log -r$END:$START" # This order is the same as "-l 4"
+
+      git checkout $CUR_BRANCH
+      command_sync
+      return 0
+   fi
+
+   command_pull --prepare
+   run_svn up
+   command_pull --complete
+   return 0
 }
-patchwork_pull() {
-   patchwork_pre_pull
-   svn up --username svn --password '' --no-auth-cache
-   patchwork_post_pull
-}
-patchwork_post_pull() {
-   CUR_BRANCH=$(util_var_load .pw_pulling CUR_BRANCH)
-   START_REV=$(util_var_load .pw_pulling START_REV)
-   util_var_clear .pw_pulling
 
-   local END_REV=$(svn log -l 1 --username svn --password '' --no-auth-cache | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+command_push() {
+   if [ '--prepare' == "$1" ]; then
+      local CUR_BRANCH=$(current_branch)
+      var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
 
-   # This is done because we want to both exclude START_REV (it was already pulled), and
-   # list the specific revisions for us that apply:
+      git rebase --onto subversion master $CUR_BRANCH
 
-   local LOGS=$(svn log -r$((START_REV + 1)):$END_REV --username svn --password '' --no-auth-cache)
-   local REVS=$(echo "$LOGS" | egrep -o '^r[0-9]+' | sed -e 's/r//')
-
-   local START=$(echo "$REVS" | head -1)
-   local END=$(echo "$REVS" | tail -1)
-
-   # For the new untracked files, have to add them all..
-   local FILES=$(svn --username svn --password '' --no-auth-cache diff --summarize -r$((START - 1)):$END)
-   if echo "$FILES" | grep '^ *M' > /dev/null; then
-      echo "$FILES" | grep '^ *M' | awk '{ print $(NF) }' | xargs git add
+      local FILES=$(git diff --name-status --relative subversion..HEAD)
+      if echo "$FILES" | grep '^ *A' > /dev/null; then
+         echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs svn add
+      fi
+      if echo "$FILES" | grep '^ *D' > /dev/null; then
+         echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs svn rm
+      fi
+      return 0
    fi
-   if echo "$FILES" | grep '^ *A' > /dev/null; then
-      echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs git add
+   if [ '--complete' == "$1" ]; then
+      local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'push --complete': No current branch"
+         return 1
+      fi
+      var_clear .pw_pushing
+
+      git checkout subversion
+      git merge $CUR_BRANCH # Fast-forward
+      git checkout $CUR_BRANCH
+      command_sync
+      return 0
    fi
-   if echo "$FILES" | grep '^ *D' > /dev/null; then
-      echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs git rm
-   fi
+   if [ '--abort' == "$1" ]; then
+      local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'push --abort': No current branch"
+         return 1
+      fi
+      var_clear .pw_pushing
 
-   git commit -a -m"svn log -r$END:$START" # This order is the same as "-l 4"
-
-   git checkout $CUR_BRANCH
-   patchwork_sync
-}
-
-patchwork_push() {
-   local CUR_BRANCH=$(util_current_branch)
-   util_var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
-
-   git rebase --onto subversion master $CUR_BRANCH
-
-   # Up until here is confirmed to work fine
-   # And apparently if I abort, post_commit moved it back onto master?  Scary, not sure why that worked..  It shouldn't have!
-
-   local FILES=$(git diff --name-status --relative subversion..HEAD)
-   if echo "$FILES" | grep '^ *A' > /dev/null; then
-      echo "$FILES" | grep '^ *A' | awk '{ print $(NF) }' | xargs svn add
-   fi
-   if echo "$FILES" | grep '^ *D' > /dev/null; then
-      echo "$FILES" | grep '^ *D' | awk '{ print $(NF) }' | xargs svn rm
+      git rebase --onto master subversion $CUR_BRANCH
+      return 0
    fi
 
-   patchwork_push_message
+   command_push --prepare
+   push_generate_message
 
-   if patchwork_confirm_push; then
-      svn commit -F SVN_COMMIT_MESSAGE
-      patchwork_post_push
+   if push_confirm; then
+      run_svn commit -F SVN_COMMIT_MESSAGE
+      command_push --complete
    else
-      patchwork_abort_push
+      command_push --abort
       echo ''
       echo 'Push aborted'
    fi
@@ -236,8 +279,8 @@ patchwork_push() {
    rm SVN_COMMIT_MESSAGE
    return 0
 }
-patchwork_push_message() {
-   CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
+push_generate_message() {
+   local CUR_BRANCH=$(current_branch)
 
    echo '' > PATCHWORK_PUSH
    echo '# All lines above this first comment will be used as your svn commit message' >> PATCHWORK_PUSH
@@ -258,10 +301,10 @@ patchwork_push_message() {
    if [ -z "$EDITOR" ];then local EDITOR=vim;fi
    $EDITOR PATCHWORK_PUSH
 
-   cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' | tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d' > SVN_COMMIT_MESSAGE
+   cat PATCHWORK_PUSH | copy_to '^#' | trim_head_tail > SVN_COMMIT_MESSAGE
    rm PATCHWORK_PUSH
 }
-patchwork_confirm_push() {
+push_confirm() {
    # Seems that newlines are already empty, so also trim off trailing whitespace...
    if [ -z "$(cat SVN_COMMIT_MESSAGE | sed -e 's/ \+$//')" ] ;then
       return 1
@@ -280,24 +323,8 @@ patchwork_confirm_push() {
       return 1
    fi
 }
-patchwork_abort_push() {
-   CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
-   util_var_clear .pw_pushing
 
-   git rebase --onto master subversion $CUR_BRANCH
-   git checkout $CUR_BRANCH
-}
-patchwork_post_push() {
-   CUR_BRANCH=$(util_var_load .pw_pushing CUR_BRANCH)
-   util_var_clear .pw_pushing
-
-   git checkout subversion
-   git merge $CUR_BRANCH # Fast-forward
-   git checkout $CUR_BRANCH
-   patchwork_sync
-}
-
-patchwork_patch() {
+command_patch() {
    echo "Not Implemented"
    # Basic idea - if I have a couple-line change, the whole branch/commit/push is a lot.
    # So:
@@ -317,38 +344,40 @@ patchwork_patch() {
    #    -> $ pw post_push
 }
 
-patchwork() {
-   COMMAND=$1
+# ==================== Sanity checking
+while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
+if [ ! -e '.git' ];then
+   echo "Cannot be run outside of git repository"
+   exit 1
+fi
 
-   if [ -z "$COMMAND" ] || echo $COMMAND | egrep -i '^help$' > /dev/null; then
-      echo "Currently available commands: branches, sync, pull"
-      return 0
-   fi
+START_BRANCH=$(current_branch)
 
-   if ! patchwork_$COMMAND ;then
-      echo "Command not found: $COMMAND"
-      return 1
-   fi
-}
+SVN_USER=''
+SVN_PASS=''
 
-pw() {
-   patchwork "$@"
-}
-
-if [ $EXEC ];then
-   COMMAND=$1
+for ARG in "$@"; do
    shift
-   case "$COMMAND" in
+   case "$ARG" in
+      --username) SVN_USER=$1
+                  ;;
+      --password) SVN_PASS=$1
+                  ;;
       pull)       ;&
       push)       ;&
       sync)       ;&
       squash_svn) ;&
-      log)        echo patchwork_command_$COMMAND "$@"
+      log)        echo command_$ARG "$@"
+                  break
                   ;;
-      branches)   echo patchwork_command_log --branches
+      branches)   echo command_log --branches
+                  break
                   ;;
-      *)          echo "Unknown command: $COMMAND"
+      *)          echo "Unknown command: $ARG"
+                  break
                   ;;
    esac
-fi
+done
+
+git checkout $START_BRANCH
 

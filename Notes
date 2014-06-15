@@ -21,12 +21,11 @@ pw post_pull
 ==================== Perl-based (or refactored bash) plans:
 
 pw push
-pw push --abort
-pw push --finish
 
-pw pull
-pw pull --finish
-pw pull --all        # "svn up" wrapper
+pw pull           # Everything including "svn up"
+pw pull --prepare # Lower-level command if you use your own "svn up" wrapper
+pw pull --finish  # Lower-level command if you use your own "svn up" wrapper
+("pw pull" === "pw pull --prepare; svn up; pw pull --finish")
 
 pw sync
 
@@ -37,6 +36,15 @@ pw log --branches    # --all master..
 pw log --all         # --all
 pw branches          # Alias to "pw log --branches"
 
+----------
+All commands will take user/pass arguments for svn:
+
+   pw pull
+   pw --username svn_user pull
+   pw --username svn_user --password svn_pass pull
+
+Using these automatically includes "--no-auth-cache"
+
 ==================== Misc
 
 Instead of "master~1..", this may be a better revision selectior:  "master^!"
@@ -44,4 +52,11 @@ Instead of "master~1..", this may be a better revision selectior:  "master^!"
 Enabling rerere might help with the sync rebasing; a couple times back at the start I was
    repeating the same resolution, but that was generally after screwing up the repo during
    a pw-pull.  It hasn't happened recently, but keep in mind...
+
+==================== Alternatives
+
+Instead of "master~1..", this may be a better revision selectior:  "master^!"
+
+Direct ancestor test:  (part of sanity checks?)
+   [ "$(git rev-list JournalRotation -1)" == "$(git merge-base master JournalRotation)" ]
 
