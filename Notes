@@ -48,3 +48,7 @@ Using these automatically includes "--no-auth-cache"
 ==================== Alternatives
 
 Instead of "master~1..", this may be a better revision selectior:  "master^!"
+
+Direct ancestor test:  (part of sanity checks?)
+   [ "$(git rev-list JournalRotation -1)" == "$(git merge-base master JournalRotation)" ]
+
