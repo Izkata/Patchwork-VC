@@ -260,6 +260,7 @@ command_push() {
       util_var_clear .pw_pushing
 
       git rebase --onto master subversion $CUR_BRANCH
+      return 0
    fi
 
    command_push --prepare
