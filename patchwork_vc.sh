@@ -135,10 +135,10 @@ command_log() {
 
 command_sync() {
    if ! branch_exists OLD_subversion; then
-      git branch -b OLD_subversion subversion
+      git branch OLD_subversion subversion
    fi
 
-   git checkout -b OLD_master master
+   git branch OLD_master master
    git rebase --onto subversion OLD_subversion master
 
    for BRANCH in $(git branch | egrep -v ' (OLD_*)$' | egrep -v " (master|subversion)$"); do
