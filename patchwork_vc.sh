@@ -64,6 +64,13 @@ run_svn() {
    svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
 }
 
+trim_head_tail() {
+   tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d'
+}
+copy_to() {
+   awk " /$1/{lose = 1} (lose == 0) {print \$0} "
+}
+
 # ==================== Currently in-use:
 
 command_log() {
@@ -270,7 +277,7 @@ push_generate_message() {
    if [ -z "$EDITOR" ];then local EDITOR=vim;fi
    $EDITOR PATCHWORK_PUSH
 
-   cat PATCHWORK_PUSH | awk ' /^#/{comment = 1} (comment == 0) {print $0} ' | tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d' > SVN_COMMIT_MESSAGE
+   cat PATCHWORK_PUSH | copy_to '^#' | trim_head_tail > SVN_COMMIT_MESSAGE
    rm PATCHWORK_PUSH
 }
 push_confirm() {
