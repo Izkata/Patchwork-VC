@@ -268,8 +268,15 @@ command_push() {
    push_generate_message
 
    if push_confirm; then
-      run_svn commit -F SVN_COMMIT_MESSAGE
-      command_push --complete
+      if run_svn commit -F SVN_COMMIT_MESSAGE ; then
+         command_push --complete
+         echo ''
+         echo 'Push complete'
+      else
+         command_push --abort
+         echo ''
+         echo 'Push aborted due to svn commit failure'
+      fi
    else
       command_push --abort
       echo ''
