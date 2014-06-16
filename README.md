@@ -59,21 +59,49 @@ git commit -m'My version-controlled settings, not to be added to subversion'
 Commands
 --------
 
-Source the file (`$ source patchwork_vc.sh`) to use these.
+Basics:
 
 | Command         | Description |
 | -------         | ----------- |
-| pw sync         | Rebase master onto subversion, then all branches onto master, ensuring the latest svn code is in use everywhere.  Only needs to be called manually when making commits to `master` |
-| pw pre_pull     | Notes your current svn revision and branch |
-| pw pull         | Wrapper for `$ pw pre_pull; svn up; pw post_pull` |
-| pw post_pull    | Commits the local changes to `subversion`, the commit message being an `$ svn log` command you can copy/paste to see what the changes were.  Calls `$ pw sync` when complete |
-| pw push         | Rebase changes in the current branch onto `subversion`, add files that were added to `git` and remove files removed from `git`.  Do an `$ svn commit` after this |
-| pw post_push    | After your `$ svn commit`, do this to update your `subversion` branch.  Calls `$ pw sync` when complete |
-| pw abort_push   | If you've called `$ pw push`, then look at the svn diff and decided against it, restore git to how it was before `$ pw push` |
-| pw squash_svn   | Squash the `subversion` branch down to 1 root commit.  Calls `$ pw sync` when complete |
-| pw branches     | One-line tree view of `$ git log` for all your branches with `master` at the root |
-| pw log          | One-line tree view of `$ git log` for only the current branch with `master` at the root |
-| pw treelog      | One-line tree view of `$ git log` for everything, including commits to the `subversion` branch.  The log you see above under the "Limitations" section is a sample of this |
+| sync            | Ensure `subversion` is an ancestor of `master`, and that `master` is an ancestor of your branches.  Only necessary to call manually when committing to `master` or resolving conflicts |
+| pull            | Update the `subversion` branch from svn |
+| push            | Rebase the current branch onto subversion and commit it.  Will use `$EDITOR` to ask for an svn commit message (or `vim` if not set) |
+| log             | View local changes.  Basically a wrapper around different calls to `git log` that I used often |
+| squash_svn      | The svn repository we pushed to is the canonical history, so squash the long tail in git down to one commit |
+
+Additional arguments:
+
+| Arg             | Description |
+| ---             | ----------- |
+| --username foo  | For interacting with the remote repository, svn username "foo" |
+| --password foo  | For interacting with the remote repository, svn password "foo" |
+| log --branches  | Show all branches instead of just the current one |
+| log --all       | In addition to all branches, include history of `master` and `subversion` |
+
+Semi-Internals:
+
+`pull` and `push`, being wrappers around svn calls, have been split to make it easier to use if the git repository was not initted at the top of the svn checkout, or some other unusual setup is used.  `--prepare` does everything up until the interaction with svn, while `--complete` does everything afterwards.  `push` additionally has an `--abort` in case you decide not to do a commit to svn.
+
+None of these are normally necessary.  Basically:
+
+`pw pull` is identical to:
+
+```bash
+pw pull --prepare
+svn up
+pw pull --complete
+```
+
+`pw push` is similar to:
+
+```bash
+pw push --prepare
+# Generate commit message.  If non-blank:
+   svn commit
+   pw push --complete
+# If commit was blank or svn commit fails:
+   pw push --abort
+```
 
 Sample Workflow
 ---------------
@@ -93,7 +121,7 @@ echo 4 >> foo_2
 git commit -a -m'Second foo commit'
 ```
 
-Your git repo should now look something like this if you run `$ pw treelog`:
+Your git repo should now look something like this if you run `$ pw log --all`:
 
 ```
 * 9cdfb6d (HEAD, feature_foo) Second foo commit
@@ -102,17 +130,7 @@ Your git repo should now look something like this if you run `$ pw treelog`:
 * 217e485 (subversion) Initial subversion state
 ```
 
-So the branch is ready to commit - run a `$ pw push` and this is your new tree:
-
-```
-* 53891d0 (HEAD, feature_foo) Second foo commit
-* f615480 First foo commit
-| * 41f603d (master) My version-controlled settings, not to be added to subversion
-|/  
-* 217e485 (subversion) Initial subversion state
-```
-
-It's now safe to `$ svn commit`, since any local changes on `master` are no longer included.  So you do so, and when done, be sure to run `$ pw post_push`.  It updates your `subversion` branch and resyncs everything, resulting in this history:
+So the branch is ready to commit to svn - run a `$ pw push` and you'll get an editor to write your svn commit message.  Like svn or git, it will contain a summary of your changes - but much more detailed.  A list of files and their current svn status (Modified/Added/Deleted), all the git commit messages you made, then the entire diff.  Save your commit message and you'll get a confirmation, and after the push your git repository will look like this:
 
 ```
 * 33c24cf (HEAD, master, feature_foo) My version-controlled settings, not to be added to subversion
@@ -123,7 +141,7 @@ It's now safe to `$ svn commit`, since any local changes on `master` are no long
 
 It's now safe to `$ git checkout master && git branch -d feature_foo`, since it's been pushed to svn.
 
-On the chance that your `$ svn commit` failed due to a conflict, `$ pw abort_push` would've moved those two commits back to `master`, giving you a clean slate for `$ pw pull`.  Afterwards, you can do another `$ pw push`.
+On the other hand, if when reviewing your commits you decide against the commit, you can either save an empty commit message (and the push is automatically aborted) or say "no" when asked to confirm the commit.  If the svn commit itself fails, the same happens.
 
 Eventually, the `subversion` branch will end up with a long tail that you probably don't particularly care about, since the canonical history is stored in svn.  That's why `$ pw squash_svn` exists.  It will make `subversion` have one single root commit.  For example, running it on the above results in something like this:
 
@@ -132,12 +150,10 @@ Eventually, the `subversion` branch will end up with a long tail that you probab
 * 94ffe4c (subversion) r196: 2014-05-24/0:17:29
 ```
 
-This isn't a bad thing - remember what I said back at the beginning:  Treat this as an svn staging area.  It's not a real repository.
-
 Conflicts
 ---------
 
-These are expected, and have happened a few times to me already.  Basically, during the `$ pw sync` is when a conflict might happen.
+These are expected, and have happened a few times to me already.  Basically, during the `$ pw sync` (or `pull`, which calls `sync`) is when a conflict might happen.
 
 Right now, it'll fail at a particular point and then have a string of errors due to git refusing to rebase when already in the middle of a rebase that has a conflict.  Resolution is simple:
 
