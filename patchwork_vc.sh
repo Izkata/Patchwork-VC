@@ -319,6 +319,8 @@ push_generate_message() {
    rm PATCHWORK_PUSH
 }
 push_confirm() {
+   local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
+
    # Seems that newlines are already empty, so also trim off trailing whitespace...
    if [ -z "$(cat SVN_COMMIT_MESSAGE | sed -e 's/ \+$//')" ] ;then
       return 1
