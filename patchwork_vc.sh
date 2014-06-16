@@ -386,5 +386,5 @@ for ARG in "$@"; do
    esac
 done
 
-git checkout $START_BRANCH
+git checkout -q $START_BRANCH
 
