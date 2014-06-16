@@ -134,6 +134,8 @@ command_log() {
 #   git branch -D OLD_master
 
 command_sync() {
+   local START_BRANCH=$(current_branch)
+
    if ! branch_exists OLD_subversion; then
       git branch OLD_subversion subversion
    fi
@@ -147,9 +149,13 @@ command_sync() {
 
    git branch -D OLD_master
    git branch -D OLD_subversion
+
+   git checkout $START_BRANCH
 }
 
 command_squash_svn() {
+   local START_BRANCH=$(current_branch)
+
    local BASE=$(git rev-list --all | tail -1)
    local SVN_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1)
    local SVN_DATE=$(run_svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
@@ -159,6 +165,7 @@ command_squash_svn() {
    git reset --soft $BASE
    git commit --amend -m"$SVN_REV: $SVN_DATE"
 
+   git checkout $START_BRANCH
    command_sync
 }
 
@@ -358,8 +365,6 @@ if [ ! -e '.git' ];then
    exit 1
 fi
 
-START_BRANCH=$(current_branch)
-
 SVN_USER=''
 SVN_PASS=''
 
@@ -385,6 +390,4 @@ for ARG in "$@"; do
                   ;;
    esac
 done
-
-git checkout -q $START_BRANCH
 
