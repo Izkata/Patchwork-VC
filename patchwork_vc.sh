@@ -141,7 +141,7 @@ command_sync() {
    git branch OLD_master master
    git rebase --onto subversion OLD_subversion master
 
-   for BRANCH in $(git branch | egrep -v ' (OLD_*)$' | egrep -v " (master|subversion)$"); do
+   for BRANCH in $(git branch | egrep -v ' (OLD_.*)$' | egrep -v " (master|subversion)$"); do
       git rebase --onto master OLD_master "$BRANCH"
    done
 
