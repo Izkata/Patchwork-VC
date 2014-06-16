@@ -374,10 +374,10 @@ for ARG in "$@"; do
       push)       ;&
       sync)       ;&
       squash_svn) ;&
-      log)        echo command_$ARG "$@"
+      log)        command_$ARG "$@"
                   break
                   ;;
-      branches)   echo command_log --branches
+      branches)   command_log --branches
                   break
                   ;;
       *)          echo "Unknown command: $ARG"
