@@ -147,8 +147,8 @@ command_sync() {
       git rebase --onto master OLD_master "$BRANCH"
    done
 
-   git branch -D OLD_master
-   git branch -D OLD_subversion
+   git branch -D OLD_master      > /dev/null
+   git branch -D OLD_subversion  > /dev/null
 
    git checkout $START_BRANCH
 }
