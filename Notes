@@ -1,23 +1,4 @@
 
-==================== Current bash-function based one:
-
-pw log
-pw treelog
-pw branches
-
-pw sync
-
-pw squash_svn
-
-pw push
-pw abort_push
-# svn add/commit/etc here
-pw post_push
-
-pw pre_pull
-pw pull # wrapper: pre_pull; svn up; post_pull
-pw post_pull
-
 ==================== Perl-based (or refactored bash) plans:
 
 pw push
@@ -47,15 +28,18 @@ Using these automatically includes "--no-auth-cache"
 
 ==================== Misc
 
-Instead of "master~1..", this may be a better revision selectior:  "master^!"
-
 Enabling rerere might help with the sync rebasing; a couple times back at the start I was
    repeating the same resolution, but that was generally after screwing up the repo during
    a pw-pull.  It hasn't happened recently, but keep in mind...
 
-==================== Alternatives
+Split "squash_svn" into "squash" that takes a branch.  How it's been going, I'll want
+   to squash master soon.
 
-Instead of "master~1..", this may be a better revision selectior:  "master^!"
+Master should always be a child of subversion, not share it.  After a squash_svn, it
+   would otherwise have no parent and "pw log" will fail.  Auto "commit --allow-empty"
+   if the sanity check fails?
+
+==================== Alternatives
 
 Direct ancestor test:  (part of sanity checks?)
    [ "$(git rev-list JournalRotation -1)" == "$(git merge-base master JournalRotation)" ]
