@@ -3,16 +3,18 @@ if exists("b:current_syntax")
     finish
 endif
 
-syntax include @gitlog $VIMRUNTIME/syntax/git.vim
-syntax include @gitdiff $VIMRUNTIME/syntax/diff.vim
+syntax match pwSeparator "^# =.*$"
+highlight link pwSeparator NonText
 
+syntax include @gitlog $VIMRUNTIME/syntax/git.vim
 syntax region pwPushLog
-    \ start=/^# =* (git) Log/
-    \ end=/^# =* (git) End Log/
+    \ start=/^commit/
+    \ end=/\n\n/
     \ contains=@gitlog, pwPushLog
 
+syntax include @gitdiff $VIMRUNTIME/syntax/diff.vim
 syntax region pwPushDiff
-    \ start=/^# =* (svn) Diff/
+    \ start=/^Index:/
     \ end=/^# =* (svn) End Diff/
     \ contains=@gitdiff, pwPushDiff
 
