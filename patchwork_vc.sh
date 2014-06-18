@@ -64,6 +64,11 @@ run_svn() {
    svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
 }
 
+last_changed_svn_rev() {
+   run_svn info | grep '^Last Changed Rev: ' | egrep -o '[0-9]+'
+}
+# local REV=$(last_changed_svn_rev)
+
 trim_head_tail() {
    tac | sed -e '/./,$!d' | tac | sed -e '/./,$!d'
 }
@@ -159,8 +164,8 @@ command_squash_svn() {
    local START_BRANCH=$(current_branch)
 
    local BASE=$(git rev-list --all | tail -1)
-   local SVN_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1)
-   local SVN_DATE=$(run_svn info | egrep '^(Last Changed Date)' | awk '{ print $4,"/",$5 }')
+   local SVN_REV=$(last_changed_svn_rev)
+   local SVN_DATE=$(run_svn info | egrep '^Last Changed Date' | awk '{ print $4,"/",$5 }')
 
    git checkout subversion
    git branch OLD_subversion
@@ -174,7 +179,7 @@ command_squash_svn() {
 command_pull() {
    if [ '--prepare' == "$1" ]; then
       local CUR_BRANCH=$(current_branch)
-      local START_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+      local START_REV=$(last_changed_svn_rev)
 
       var_save .pw_pulling CUR_BRANCH "$CUR_BRANCH"
       var_save .pw_pulling START_REV "$START_REV"
@@ -194,7 +199,7 @@ command_pull() {
       fi
       var_clear .pw_pulling
 
-      local END_REV=$(run_svn log -l 1 | egrep -o '^r[0-9]+' | head -1 | sed -e 's/r//')
+      local END_REV=$(last_changed_svn_rev)
 
       # This is done because we want to both exclude START_REV (it was already pulled), and
       # list the specific revisions for us that apply:
