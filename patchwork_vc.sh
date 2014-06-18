@@ -375,26 +375,30 @@ fi
 SVN_USER=''
 SVN_PASS=''
 
-for ARG in "$@"; do
-   shift
+while getopts 'u:p:' ARG; do
    case "$ARG" in
-#      --username) SVN_USER=$1
-#                  ;;
-#      --password) SVN_PASS=$1
-#                  ;;
-      pull)       ;&
-      push)       ;&
-      sync)       ;&
-      squash_svn) ;&
-      log)        command_$ARG "$@"
-                  break
-                  ;;
-      branches)   command_log --branches
-                  break
-                  ;;
-      *)          echo "Unknown command: $ARG"
-                  break
-                  ;;
+      u) SVN_USER=$OPTARG
+         ;;
+      p) SVN_PASS=$OPTARG
+         ;;
    esac
 done
+
+shift $((OPTIND-1))
+[ "$1" = "--" ] && shift
+
+CMD=$1
+shift
+case "$CMD" in
+   pull)       ;&
+   push)       ;&
+   sync)       ;&
+   squash_svn) ;&
+   log)        command_$CMD "$@"
+               ;;
+   branches)   command_log --branches
+               ;;
+   *)          echo "Unknown command: $CMD"
+               ;;
+esac
 
