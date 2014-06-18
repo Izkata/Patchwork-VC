@@ -70,6 +70,8 @@ trim_head_tail() {
 copy_to() {
    awk " /$1/{lose = 1} (lose == 0) {print \$0} "
 }
+# cat file1 | trim_head_tail > file2
+# cat file1 | copy_to '^#' > file2
 
 # ==================== Currently in-use:
 
