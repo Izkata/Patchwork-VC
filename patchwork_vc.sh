@@ -371,10 +371,10 @@ SVN_PASS=''
 for ARG in "$@"; do
    shift
    case "$ARG" in
-      --username) SVN_USER=$1
-                  ;;
-      --password) SVN_PASS=$1
-                  ;;
+#      --username) SVN_USER=$1
+#                  ;;
+#      --password) SVN_PASS=$1
+#                  ;;
       pull)       ;&
       push)       ;&
       sync)       ;&
