@@ -59,7 +59,7 @@ run_svn() {
    local SVN_PASS_CMD=
    local EXTRA=
    [ "$SVN_USER" ] && SVN_USER_CMD="--username $SVN_USER"
-   [ "$SVN_PASS" ] && SVN_PASS_CMD="--username $SVN_PASS"
+   [ "$SVN_PASS" ] && SVN_PASS_CMD="--password $SVN_PASS"
    [ "$SVN_USER" -o "$SVN_PASS" ] && EXTRA='--no-auth-cache'
    svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
 }
