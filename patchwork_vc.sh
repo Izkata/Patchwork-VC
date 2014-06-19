@@ -61,7 +61,15 @@ run_svn() {
    [ "$SVN_USER" ] && SVN_USER_CMD="--username $SVN_USER"
    [ "$SVN_PASS" ] && SVN_PASS_CMD="--password $SVN_PASS"
    [ "$SVN_USER" -o "$SVN_PASS" ] && EXTRA='--no-auth-cache'
-   svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
+
+   if [ -z "$EXTRA" ];then
+      if ! svn --non-interactive "$@"; then
+         [ -z "$SVN_USER" ] && read -p 'svn user: ' SVN_USER
+         run_svn "$@"
+      fi
+   else
+      svn $SVN_USER_CMD $SVN_PASS_CMD $EXTRA "$@"
+   fi
 }
 
 last_changed_svn_rev() {
