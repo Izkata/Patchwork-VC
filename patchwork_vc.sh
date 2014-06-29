@@ -90,11 +90,11 @@ copy_to() {
 
 command_log() {
    if [ '--all' == "$1" ];then
-      git log --graph --decorate --oneline --color --all | less -SEXIER
+      git log --graph --decorate --oneline --color --glob=refs/heads | less -SEXIER
       return 0
    fi
    if [ '--branches' == "$1" ];then
-      git log --graph --decorate --oneline --color --all master~1.. | less -SEXIER
+      git log --graph --decorate --oneline --color --glob=refs/heads master~1.. | less -SEXIER
       return 0
    fi
 
