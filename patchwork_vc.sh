@@ -452,6 +452,27 @@ command_patch() {
 }
 
 # ==================== Sanity checking
+if [ "$1" == 'init' ];then
+   # Soooo...
+   #  $ pw init
+   #     git init .
+   #     mkdir .pw/                 # Not used yet, but will be!
+   #     echo 1 > .pw/init_stage
+   #     echo '.svn/' > .gitignore  # Can also init *.pyc and other common ones
+   #     -> Return here and ask user to continue populating .gitignore
+   #  $ pw init
+   #     echo 2 > .pw/init_stage
+   #     -> Confirm status looks good (not adding svn-uncontrolled things)
+   #     -> Can probably be done with "svn stat" and looking for errors
+   #     $ pw init undo
+   #        -> Have the user update .gitignore
+   #        echo 1 > .pw/init_stage
+   #     $ pw init
+   #        -> Complete the branches (subversion/master)
+   #        rm .pw/init_stage
+   exit 0
+fi
+
 while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
 if [ ! -e '.git' ];then
    echo "Cannot be run outside of git repository"
