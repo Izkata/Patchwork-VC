@@ -89,7 +89,7 @@ copy_to() {
 # ==================== Currently in-use:
 
 command_log() {
-   if [ '--all' == "$1" ];then
+   if [ '--all' == "$1" ] && [ -z "$2" ];then
       git log --graph --decorate --oneline --color --glob=refs/heads | less -SEXIER
       return 0
    fi
@@ -97,8 +97,12 @@ command_log() {
       git log --graph --decorate --oneline --color --glob=refs/heads master~1.. | less -SEXIER
       return 0
    fi
+   if [ -z "$1" ];then
+      git log --graph --decorate --oneline --color master~1.. | less -SEXIER
+      return 0
+   fi
 
-   git log --graph --decorate --oneline --color master~1.. | less -SEXIER
+   git log --graph --decorate --oneline --color "$@" | less -SEXIER
 }
 
 # This is better with metadata:
