@@ -453,23 +453,41 @@ command_patch() {
 
 # ==================== Sanity checking
 if [ "$1" == 'init' ];then
-   # Soooo...
-   #  $ pw init
-   #     git init .
-   #     mkdir .pw/                 # Not used yet, but will be!
-   #     echo 1 > .pw/init_stage
-   #     echo '.svn/' > .gitignore  # Can also init *.pyc and other common ones
-   #     -> Return here and ask user to continue populating .gitignore
-   #  $ pw init
+   if [ "$2" == 'undo' ];then
+      if [ 'init_2' == "$(cat .pw/stage)" ];then
+         exit 0
+      fi
+      if [ 'init_1' == "$(cat .pw/stage)" ];then
+         exit 0
+      fi
+   fi
+
+   if [ 'init_2' == "$(cat .pw/stage)" ];then
+      git branch subversion
+      echo '' > .pw/stage
+      exit 0
+   fi
+
+   if [ 'init_1' == "$(cat .pw/stage)" ];then
    #     echo 2 > .pw/init_stage
    #     -> Confirm status looks good (not adding svn-uncontrolled things)
    #     -> Can probably be done with "svn stat" and looking for errors
    #     $ pw init undo
    #        -> Have the user update .gitignore
    #        echo 1 > .pw/init_stage
-   #     $ pw init
-   #        -> Complete the branches (subversion/master)
-   #        rm .pw/init_stage
+      exit 0
+   fi
+
+   if [ -e '.git' ] || [ -e '.pw' ];then
+      echo "Cannot init a repo here; .git and/or .pw already exist"
+      exit 2
+   fi
+
+   git init .
+   mkdir .pw/
+   echo 'init_1' > .pw/stage
+   echo -e '.svn/\n*.py' > .gitignore
+   echo 'Check .gitignore and add anything else that should not be version controlled'
    exit 0
 fi
 
