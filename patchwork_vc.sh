@@ -475,6 +475,7 @@ if [ "$1" == 'init' ];then
    #     $ pw init undo
    #        -> Have the user update .gitignore
    #        echo 1 > .pw/init_stage
+      # git ls-files | while read FILE; do if ! svn info $FILE &> /dev/null; then echo ==== $FILE ;fi;done
       exit 0
    fi
 
