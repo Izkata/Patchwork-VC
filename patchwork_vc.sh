@@ -162,10 +162,10 @@ command_sync() {
       git branch OLD_master master
    fi
 
-   git rebase --onto subversion OLD_subversion master
+   git rebase --preserve-merges --onto subversion OLD_subversion master
 
    for BRANCH in $(git branch | egrep -v ' (OLD_.*)$' | egrep -v " (master|subversion)$"); do
-      git rebase --onto master OLD_master "$BRANCH"
+      git rebase --preserve-merges --onto master OLD_master "$BRANCH"
    done
 
    git branch -D OLD_master      > /dev/null
@@ -255,7 +255,7 @@ command_push() {
       local CUR_BRANCH=$(current_branch)
       var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
 
-      git rebase --onto subversion master $CUR_BRANCH
+      git rebase --preserve-merges --onto subversion master $CUR_BRANCH
 
       local FILES=$(git diff --name-status --relative subversion..HEAD)
       if echo "$FILES" | grep '^ *A' > /dev/null; then
@@ -288,7 +288,7 @@ command_push() {
       fi
       var_clear .pw_pushing
 
-      git rebase --onto master subversion $CUR_BRANCH
+      git rebase --preserve-merges --onto master subversion $CUR_BRANCH
       return 0
    fi
 
