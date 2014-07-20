@@ -10,6 +10,12 @@ branch_exists() {
    git branch | grep " $1$" > /dev/null
    return $?
 }
+is_ancestor() {
+   local BASE_REV=$(git rev-list "$1" -1)
+   local BRANCH_REV=$(git merge-base "$1" "$2")
+   [ $BASE_REV == $BRANCH_REV ]
+   return $?
+}
 
 var_save() {
    local FILE=$1
@@ -165,7 +171,9 @@ command_sync() {
    git rebase --preserve-merges --onto subversion OLD_subversion master
 
    for BRANCH in $(git branch | egrep -v ' (OLD_.*)$' | egrep -v " (master|subversion)$"); do
-      git rebase --preserve-merges --onto master OLD_master "$BRANCH"
+      if is_ancestor OLD_master "$BRANCH"; then
+         git rebase --preserve-merges --onto master OLD_master "$BRANCH"
+      fi
    done
 
    git branch -D OLD_master      > /dev/null
@@ -278,6 +286,7 @@ command_push() {
       git merge $CUR_BRANCH # Fast-forward
       git checkout $CUR_BRANCH
       command_sync
+      git merge master # Fast-forward
       return 0
    fi
    if [ '--abort' == "$1" ]; then
