@@ -52,7 +52,6 @@ var_clear() {
    local CUR_DIR=$(pwd)
    while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
 
-   cat "$FILE"
    rm "$FILE"
    cd "$CUR_DIR"
 }
