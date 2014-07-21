@@ -171,7 +171,9 @@ command_sync() {
 
    for BRANCH in $(git branch | egrep -v ' (OLD_.*)$' | egrep -v " (master|subversion)$"); do
       if is_ancestor OLD_master "$BRANCH"; then
-         git rebase --preserve-merges --onto master OLD_master "$BRANCH"
+         if ! git rebase --preserve-merges --onto master OLD_master "$BRANCH"; then
+            return 1
+         fi
       fi
    done
 
@@ -179,6 +181,7 @@ command_sync() {
    git branch -D OLD_subversion  > /dev/null
 
    git checkout $START_BRANCH
+   return 0
 }
 
 command_squash_svn() {
@@ -284,7 +287,7 @@ command_push() {
       git checkout subversion
       git merge --no-ff $CUR_BRANCH
       git checkout $CUR_BRANCH
-      command_sync
+      command_sync # Check for failure...
       git merge master # Fast-forward
       return 0
    fi
