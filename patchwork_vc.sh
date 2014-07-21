@@ -282,7 +282,7 @@ command_push() {
       var_clear .pw_pushing
 
       git checkout subversion
-      git merge $CUR_BRANCH # Fast-forward
+      git merge --no-ff $CUR_BRANCH
       git checkout $CUR_BRANCH
       command_sync
       git merge master # Fast-forward
