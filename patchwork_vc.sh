@@ -287,8 +287,10 @@ command_push() {
       git checkout subversion
       git merge --no-ff $CUR_BRANCH
       git checkout $CUR_BRANCH
-      command_sync # Check for failure...
-      git merge master # Fast-forward
+      if ! command_sync ;then
+         return 1
+      fi
+      git merge master # Fast-forward, but only if sync succeeded
       return 0
    fi
    if [ '--abort' == "$1" ]; then
