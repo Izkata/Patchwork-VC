@@ -167,7 +167,10 @@ command_sync() {
       git branch OLD_master master
    fi
 
-   git rebase --preserve-merges --onto subversion OLD_subversion master
+   if ! git rebase --preserve-merges --onto subversion OLD_subversion master; then
+      return 1
+   fi
+   git branch -D OLD_subversion  > /dev/null
 
    for BRANCH in $(git branch | egrep -v ' (OLD_.*)$' | egrep -v " (master|subversion)$"); do
       if is_ancestor OLD_master "$BRANCH"; then
@@ -176,9 +179,7 @@ command_sync() {
          fi
       fi
    done
-
    git branch -D OLD_master      > /dev/null
-   git branch -D OLD_subversion  > /dev/null
 
    git checkout $START_BRANCH
    return 0
