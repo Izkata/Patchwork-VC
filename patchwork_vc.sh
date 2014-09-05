@@ -98,6 +98,10 @@ command_log() {
       git log --graph --decorate --oneline --color --first-parent --glob=refs/heads | less -SEXIER
       return 0
    fi
+   if [ '--allall' == "$1" ] && [ -z "$2" ];then
+      git log --graph --decorate --oneline --color --glob=refs/heads | less -SEXIER
+      return 0
+   fi
    if [ '--branches' == "$1" ];then
       git log --graph --decorate --oneline --color --glob=refs/heads master~1.. | less -SEXIER
       return 0
