@@ -472,11 +472,25 @@ if [ "$1" == 'init' ]; then
    fi
 
    if [ 'init_1' == "$(cat .pw/stage)" ];then
-      echo "Still must be tested"
-      exit 5
+      git add .gitignore
+      find . \
+         -type f \
+         -! -path '*.svn/*' \
+         -! -path '*.git/*' \
+         -exec sh -c 'svn info "$0" &> /dev/null && git add "$0" 2> /dev/null' {} \;
 
       echo 'init_2' > .pw/stage
-      git add .
+
+      if [ ! -z "$(git status --porcelain | grep -v '^A ')" ]; then
+         echo "There are untracked files that don't belong in subversion."
+         echo "This must be resolved manually (likely need more .gitignore rules)."
+         echo "Run 'pw init' again when done."
+         exit 0
+      fi
+   fi
+
+   if [ 'init_2' == "$(cat .pw/stage)" ];then
+      git add .gitignore
       git commit -m'Subversion import'
       git branch subversion
 
@@ -485,13 +499,7 @@ if [ "$1" == 'init' ]; then
       git add local_change
       git commit -m"local_change so sync doesn't mess up"
 
-      # svn ls -R | while read FILE; do git add "$FILE"; done
-   #     -> Confirm status looks good (not adding svn-uncontrolled things)
-   #     -> Can probably be done with "svn stat" and looking for errors
-   #     $ pw init undo
-   #        -> Have the user update .gitignore
-   #        echo 1 > .pw/init_stage
-      # git ls-files | while read FILE; do if ! svn info $FILE &> /dev/null; then echo ==== $FILE ;fi;done
+      echo '' > .pw/stage
       exit 0
    fi
 
