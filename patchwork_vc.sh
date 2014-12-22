@@ -463,10 +463,11 @@ if [ "$1" == 'init' ]; then
    if [ ! -e '.pw/' ]; then
       mkdir .pw/
       git init .
+      echo -e '.pw/\n.svn/\n*.pyc' > .gitignore
+      echo "Check .gitignore and add anything else that should not be version controlled,"
+      echo "then run 'pw init' again."
+
       echo 'init_1' > .pw/stage
-      echo -e '.svn/\n*.pyc' > .gitignore
-      echo 'Check .gitignore and add anything else that should not be version controlled,'
-      echo 'then run "pw init" again.'
       exit 0
    fi
 
