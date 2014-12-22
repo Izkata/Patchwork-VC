@@ -454,8 +454,10 @@ command_patch() {
 # ==================== Init new must be run outside of primary options due to .git not existing
 if [ "$1" == 'init' ]; then
    if [ -e '.git' ] || [ -e '.pw' ];then
-      echo "Cannot init a repo here; .git and/or .pw already exist"
-      exit 1
+      if ! cat .pw/stage | grep 'init' > /dev/null; then
+         echo "Cannot init a repo here; .git and/or .pw already exist"
+         exit 1
+      fi
    fi
 
    if [ ! -e '.pw/' ]; then
