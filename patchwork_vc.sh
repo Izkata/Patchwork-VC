@@ -451,25 +451,38 @@ command_patch() {
    #    -> $ pw post_push
 }
 
-# ==================== Sanity checking
-if [ "$1" == 'init' ];then
-   if [ "$2" == 'undo' ];then
-      if [ 'init_2' == "$(cat .pw/stage)" ];then
-         exit 0
-      fi
-      if [ 'init_1' == "$(cat .pw/stage)" ];then
-         exit 0
-      fi
+# ==================== Init new must be run outside of primary options due to .git not existing
+if [ "$1" == 'init' ]; then
+   if [ -e '.git' ] || [ -e '.pw' ];then
+      echo "Cannot init a repo here; .git and/or .pw already exist"
+      exit 1
    fi
 
-   if [ 'init_2' == "$(cat .pw/stage)" ];then
-      git branch subversion
-      echo '' > .pw/stage
+   if [ ! -e '.pw/' ]; then
+      mkdir .pw/
+      git init .
+      echo 'init_1' > .pw/stage
+      echo -e '.svn/\n*.pyc' > .gitignore
+      echo 'Check .gitignore and add anything else that should not be version controlled,'
+      echo 'then run "pw init" again.'
       exit 0
    fi
 
    if [ 'init_1' == "$(cat .pw/stage)" ];then
-   #     echo 2 > .pw/init_stage
+      echo "Still must be tested"
+      exit 5
+
+      echo 'init_2' > .pw/stage
+      git add .
+      git commit -m'Subversion import'
+      git branch subversion
+
+      # This is temporary; there is a bug I have yet to bother tracking down
+      touch 'local_change'
+      git add local_change
+      git commit -m"local_change so sync doesn't mess up"
+
+      # svn ls -R | while read FILE; do git add "$FILE"; done
    #     -> Confirm status looks good (not adding svn-uncontrolled things)
    #     -> Can probably be done with "svn stat" and looking for errors
    #     $ pw init undo
@@ -479,23 +492,23 @@ if [ "$1" == 'init' ];then
       exit 0
    fi
 
-   if [ -e '.git' ] || [ -e '.pw' ];then
-      echo "Cannot init a repo here; .git and/or .pw already exist"
-      exit 2
+   if [ "$2" == 'undo' ]; then
+      if [ 'init_2' == "$(cat .pw/stage)" ];then
+         exit 0
+      fi
+      if [ 'init_1' == "$(cat .pw/stage)" ];then
+         exit 0
+      fi
    fi
 
-   git init .
-   mkdir .pw/
-   echo 'init_1' > .pw/stage
-   echo -e '.svn/\n*.py' > .gitignore
-   echo 'Check .gitignore and add anything else that should not be version controlled'
    exit 0
 fi
 
+# ==================== Sanity checking
 while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
 if [ ! -e '.git' ];then
    echo "Cannot be run outside of git repository"
-   exit 1
+   exit 2
 fi
 
 sanity_check_local_changes() {
