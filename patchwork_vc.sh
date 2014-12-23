@@ -494,6 +494,7 @@ if [ "$1" == 'init' ]; then
 
    if [ 'init_1' == "$(cat .pw/stage)" ];then
       git add .gitignore
+      # See about populating the "-! -path" from the gitignore?
       find . \
          -type f \
          -! -path '*.pyc' \
