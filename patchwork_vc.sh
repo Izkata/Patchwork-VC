@@ -464,27 +464,28 @@ if [ "$1" == 'init' ]; then
       mkdir .pw/
       git init .
       echo -e '.pw/\n.svn/\n*.pyc' > .gitignore
+      echo 'Scanning for non-svn files...'
       POSSIB_IGNORE=$(
          find . \
-            -type f \
-            -! -path '*.pw/*' \
+            -! -path '*.pw*' \
             -! -path '*.svn/*' \
-            -! -path '*.git/*' \
+            -! -path '*.git*' \
             -! -path '*.pyc' \
             -exec sh -c 'svn info "$0" &> /dev/null || echo "$0" 2> /dev/null' {} \;
       )
 
+      echo 'Collapsing list...'
       EXCLUDE=''
       for X in $POSSIB_IGNORE; do
          NEW_POSSIB_IGNORE=$(echo "$POSSIB_IGNORE" | grep -v "^$X")
          if [ "$POSSIB_IGNORE" != "$NEW_POSSIB_IGNORE" ]; then
             POSSIB_IGNORE="$NEW_POSSIB_IGNORE"
             EXCLUDE="$EXCLUDE $X"
-            echo $X
          fi
       done
 
-      for FILE in $(echo "$EXC" | sed -e 's#^\./##'); do
+      for FILE in $EXCLUDE; do
+         FILE=$(echo $FILE | sed -e 's#^\./##')
          if [ -d "$FILE" ]; then
             echo "$FILE/"
          else
@@ -500,13 +501,21 @@ if [ "$1" == 'init' ]; then
    fi
 
    if [ 'init_1' == "$(cat .pw/stage)" ];then
+      # This is mainly for speed.  It would take absolutely forever for a virtualenv (for example) to be scanned if it went into it...
+      SKIP_RULES=$(
+         cat .gitignore | while read RULE; do
+            if echo "$RULE" | grep '\*' > /dev/null; then
+               echo "-! -path '$RULE'"
+            else
+               echo "-! -path '*$RULE*'"
+            fi
+         done
+      )
+      echo 'Scanning & adding to git...'
       git add .gitignore
-      # See about populating the "-! -path" from the gitignore?
       find . \
          -type f \
-         -! -path '*.pyc' \
-         -! -path '*.svn/*' \
-         -! -path '*.git/*' \
+         $SKIP_RULES  -! -path '*.git/*' \
          -exec sh -c 'svn info "$0" &> /dev/null && git add "$0" 2> /dev/null' {} \;
 
       echo 'init_2' > .pw/stage
