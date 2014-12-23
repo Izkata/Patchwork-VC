@@ -410,6 +410,13 @@ if [ ! -e '.git' ];then
    exit 1
 fi
 
+function sanity_check_local_changes() {
+   if git status --porcelain | egrep -v '^\?\?'; then
+      echo "Cannot be run while the git repo is in a dirty state"
+      exit 3
+   fi
+}
+
 SVN_USER=''
 SVN_PASS=''
 
@@ -435,7 +442,8 @@ while [[ $# > 0 ]]; do
       pull)       ;&
       push)       ;&
       sync)       ;&
-      squash_svn) ;&
+      squash_svn) sanity_check_local_changes
+                  ;&
       log)        command_$ARG "$@"
                   break
                   ;;
