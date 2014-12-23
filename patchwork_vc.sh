@@ -464,6 +464,27 @@ if [ "$1" == 'init' ]; then
       mkdir .pw/
       git init .
       echo -e '.pw/\n.svn/\n*.pyc' > .gitignore
+      POSSIB_IGNORE=$(
+         find . \
+            -type f \
+            -! -path '*.pw/*' \
+            -! -path '*.svn/*' \
+            -! -path '*.git/*' \
+            -! -path '*.pyc' \
+            -exec sh -c 'svn info "$0" &> /dev/null || echo "$0" 2> /dev/null' {} \;
+      )
+
+      EXCLUDE=''
+      for X in $POSSIB_IGNORE; do
+         NEW_POSSIB_IGNORE=$(echo "$POSSIB_IGNORE" | grep -v "^$X")
+         if [ "$POSSIB_IGNORE" != "$NEW_POSSIB_IGNORE" ]; then
+            POSSIB_IGNORE="$NEW_POSSIB_IGNORE"
+            EXCLUDE="$EXCLUDE $X"
+            echo $X
+         fi
+      done
+      echo "$EXCLUDE" >> .gitignore
+
       echo "Check .gitignore and add anything else that should not be version controlled,"
       echo "then run 'pw init' again."
 
@@ -475,6 +496,7 @@ if [ "$1" == 'init' ]; then
       git add .gitignore
       find . \
          -type f \
+         -! -path '*.pyc' \
          -! -path '*.svn/*' \
          -! -path '*.git/*' \
          -exec sh -c 'svn info "$0" &> /dev/null && git add "$0" 2> /dev/null' {} \;
