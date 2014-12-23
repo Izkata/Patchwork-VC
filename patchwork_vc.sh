@@ -220,6 +220,10 @@ command_pull() {
    fi
    if [ '--abort' == "$1" ]; then
       local CUR_BRANCH=$(var_load .pw_pulling CUR_BRANCH)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'pull --abort': No current branch"
+         return 1
+      fi
       var_clear .pw_pulling
       git checkout $CUR_BRANCH
       return 0
@@ -291,6 +295,18 @@ command_push() {
       fi
       return 0
    fi
+   if [ '--abort' == "$1" ]; then
+      sanity_check_local_changes
+      local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
+      if [ -z "$CUR_BRANCH" ];then
+         echo "Error on 'push --abort': No current branch"
+         return 1
+      fi
+      var_clear .pw_pushing
+
+      git rebase --preserve-merges --onto master subversion $CUR_BRANCH
+      return 0
+   fi
    if [ '--complete' == "$1" ]; then
       local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
@@ -306,18 +322,6 @@ command_push() {
          return 1
       fi
       git merge master # Fast-forward, but only if sync succeeded
-      return 0
-   fi
-   if [ '--abort' == "$1" ]; then
-      sanity_check_local_changes
-      local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
-      if [ -z "$CUR_BRANCH" ];then
-         echo "Error on 'push --abort': No current branch"
-         return 1
-      fi
-      var_clear .pw_pushing
-
-      git rebase --preserve-merges --onto master subversion $CUR_BRANCH
       return 0
    fi
 
