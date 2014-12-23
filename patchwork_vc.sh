@@ -483,7 +483,14 @@ if [ "$1" == 'init' ]; then
             echo $X
          fi
       done
-      echo "$EXCLUDE" >> .gitignore
+
+      for FILE in $(echo "$EXC" | sed -e 's#^\./##'); do
+         if [ -d "$FILE" ]; then
+            echo "$FILE/"
+         else
+            echo "$FILE"
+         fi
+      done >> .gitignore
 
       echo "Check .gitignore and add anything else that should not be version controlled,"
       echo "then run 'pw init' again."
