@@ -217,6 +217,7 @@ command_pull() {
    fi
    if [ '--abort' == "$1" ]; then
       local CUR_BRANCH=$(var_load .pw_pulling CUR_BRANCH)
+      var_clear .pw_pulling
       git checkout $CUR_BRANCH
       return 0
    fi
