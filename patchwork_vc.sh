@@ -162,6 +162,7 @@ command_log() {
 #   git branch -D OLD_master
 
 command_sync() {
+   sanity_check_local_changes
    local START_BRANCH=$(current_branch)
 
    if ! branch_exists OLD_subversion; then
@@ -190,6 +191,7 @@ command_sync() {
 }
 
 command_squash_svn() {
+   sanity_check_local_changes
    local START_BRANCH=$(current_branch)
 
    local BASE=$(git rev-list --all | tail -1)
@@ -207,6 +209,7 @@ command_squash_svn() {
 
 command_pull() {
    if [ '--prepare' == "$1" ]; then
+      sanity_check_local_changes
       local CUR_BRANCH=$(current_branch)
       local START_REV=$(last_changed_svn_rev)
 
@@ -273,6 +276,7 @@ command_pull() {
 
 command_push() {
    if [ '--prepare' == "$1" ]; then
+      sanity_check_local_changes
       local CUR_BRANCH=$(current_branch)
       var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
 
@@ -305,6 +309,7 @@ command_push() {
       return 0
    fi
    if [ '--abort' == "$1" ]; then
+      sanity_check_local_changes
       local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --abort': No current branch"
@@ -410,7 +415,7 @@ if [ ! -e '.git' ];then
    exit 1
 fi
 
-function sanity_check_local_changes() {
+sanity_check_local_changes() {
    if git status --porcelain | egrep -v '^\?\?'; then
       echo "Cannot be run while the git repo is in a dirty state"
       exit 3
@@ -442,8 +447,7 @@ while [[ $# > 0 ]]; do
       pull)       ;&
       push)       ;&
       sync)       ;&
-      squash_svn) sanity_check_local_changes
-                  ;&
+      squash_svn) ;&
       log)        command_$ARG "$@"
                   break
                   ;;
