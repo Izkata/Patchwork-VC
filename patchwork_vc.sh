@@ -281,6 +281,7 @@ command_pull() {
 command_push() {
    local METHOD=
    local ANDREMOVE=
+   local MESSAGE=
    while [[ $# > 0 ]]; do
       ARG="$1"
       shift
@@ -293,6 +294,9 @@ command_push() {
          --complete) METHOD='complete'
                      ;;
          --remove)   ANDREMOVE='--remove'
+                     ;;
+         --message)  MESSAGE="$1"
+                     shift
                      ;;
       esac
    done
@@ -349,7 +353,12 @@ command_push() {
    fi
 
    command_push --prepare
-   push_generate_message
+
+   if [[ "$MESSAGE" ]]; then
+      echo "$MESSAGE" >> SVN_COMMIT_MESSAGE
+   else
+      push_generate_message
+   fi
 
    if push_confirm; then
       if run_svn commit -F SVN_COMMIT_MESSAGE ; then
