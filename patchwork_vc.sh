@@ -292,7 +292,7 @@ command_push() {
                      ;;
          --complete) METHOD='complete'
                      ;;
-         --remove)   ANDREMOVE='1'
+         --remove)   ANDREMOVE='--remove'
                      ;;
       esac
    done
@@ -353,7 +353,7 @@ command_push() {
 
    if push_confirm; then
       if run_svn commit -F SVN_COMMIT_MESSAGE ; then
-         command_push --complete
+         command_push --complete "$ANDREMOVE"
          echo ''
          echo 'Push complete'
       else
