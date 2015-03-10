@@ -279,7 +279,25 @@ command_pull() {
 }
 
 command_push() {
-   if [ '--prepare' == "$1" ]; then
+   local METHOD=
+   local ANDREMOVE=
+   while [[ $# > 0 ]]; do
+      ARG="$1"
+      shift
+
+      case "$ARG" in
+         --prepare)  METHOD='prepare'
+                     ;;
+         --abort)    METHOD='abort'
+                     ;;
+         --complete) METHOD='complete'
+                     ;;
+         --remove)   ANDREMOVE='1'
+                     ;;
+      esac
+   done
+
+   if [ 'prepare' == "$METHOD" ]; then
       sanity_check_local_changes
       local CUR_BRANCH=$(current_branch)
       var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
@@ -295,7 +313,7 @@ command_push() {
       fi
       return 0
    fi
-   if [ '--abort' == "$1" ]; then
+   if [ 'abort' == "$METHOD" ]; then
       sanity_check_local_changes
       local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
@@ -307,7 +325,7 @@ command_push() {
       git rebase --preserve-merges --onto master subversion $CUR_BRANCH
       return 0
    fi
-   if [ '--complete' == "$1" ]; then
+   if [ 'complete' == "$METHOD" ]; then
       local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --complete': No current branch"
@@ -322,6 +340,11 @@ command_push() {
          return 1
       fi
       git merge master # Fast-forward, but only if sync succeeded
+
+      if [[ "$ANDREMOVE" ]]; then
+         git checkout master
+         git branch -d $CUR_BRANCH
+      fi
       return 0
    fi
 
