@@ -463,23 +463,20 @@ if [ "$1" == 'init' ]; then
    if [ ! -e '.pw/' ]; then
       mkdir .pw/
       git init .
-      echo -e '.pw/\n.svn/\n*.pyc' > .gitignore
+
       echo 'Scanning for non-svn files...'
-      POSSIB_IGNORE=$(
-         find . \
-            -! -path '*.pw*' \
-            -! -path '*.svn/*' \
-            -! -path '*.git*' \
-            -! -path '*.pyc' \
-            -exec sh -c 'svn info "$0" &> /dev/null || echo "$0" 2> /dev/null' {} \;
-      )
+      SVN_IGNORE=$(svn stat --no-ignore | grep '^I' | awk '{ print $2 }' | sort)
+      for IGNORE in '.pw/' '.svn/' '*.pyc'; do
+         SVN_IGNORE=$(echo "$SVN_IGNORE" | egrep -v "$IGNORE")
+         echo "$IGNORE"
+      done >> .gitignore
 
       echo 'Collapsing list...'
       EXCLUDE=''
-      for X in $POSSIB_IGNORE; do
-         NEW_POSSIB_IGNORE=$(echo "$POSSIB_IGNORE" | grep -v "^$X")
-         if [ "$POSSIB_IGNORE" != "$NEW_POSSIB_IGNORE" ]; then
-            POSSIB_IGNORE="$NEW_POSSIB_IGNORE"
+      for X in $SVN_IGNORE; do
+         NEW_SVN_IGNORE=$(echo "$SVN_IGNORE" | grep -v "^$X")
+         if [ "$SVN_IGNORE" != "$NEW_SVN_IGNORE" ]; then
+            SVN_IGNORE="$NEW_SVN_IGNORE"
             EXCLUDE="$EXCLUDE $X"
          fi
       done
@@ -501,22 +498,7 @@ if [ "$1" == 'init' ]; then
    fi
 
    if [ 'init_1' == "$(cat .pw/stage)" ];then
-      # This is mainly for speed.  It would take absolutely forever for a virtualenv (for example) to be scanned if it went into it...
-      SKIP_RULES=$(
-         cat .gitignore | while read RULE; do
-            if echo "$RULE" | grep '\*' > /dev/null; then
-               echo "-! -path '$RULE'"
-            else
-               echo "-! -path '*$RULE*'"
-            fi
-         done
-      )
-      echo 'Scanning & adding to git...'
-      git add .gitignore
-      find . \
-         -type f \
-         $SKIP_RULES  -! -path '*.git/*' \
-         -exec sh -c 'svn info "$0" &> /dev/null && git add "$0" 2> /dev/null' {} \;
+      git add .
 
       echo 'init_2' > .pw/stage
 
