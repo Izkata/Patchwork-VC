@@ -13,7 +13,7 @@ branch_exists() {
 is_ancestor() {
    local BASE_REV=$(git rev-list "$1" -1)
    local BRANCH_REV=$(git merge-base "$1" "$2")
-   [ $BASE_REV == $BRANCH_REV ]
+   [ "$BASE_REV" == "$BRANCH_REV" ]
    return $?
 }
 
