@@ -295,6 +295,7 @@ command_push() {
                      ;;
          --remove)   ANDREMOVE='--remove'
                      ;;
+         -m)         ;&
          --message)  MESSAGE="$1"
                      shift
                      ;;
