@@ -279,7 +279,33 @@ command_pull() {
 }
 
 command_push() {
-   if [ '--prepare' == "$1" ]; then
+   local METHOD=
+   local ANDREMOVE=
+   local MESSAGE=
+   local AUTO_MESSAGE=
+   while [[ $# > 0 ]]; do
+      ARG="$1"
+      shift
+
+      case "$ARG" in
+         --prepare)  METHOD='prepare'
+                     ;;
+         --abort)    METHOD='abort'
+                     ;;
+         --complete) METHOD='complete'
+                     ;;
+         --remove)   ANDREMOVE='--remove'
+                     ;;
+         --auto-msg) AUTO_MESSAGE=1
+                     ;;
+         -m)         ;&
+         --message)  MESSAGE="$1"
+                     shift
+                     ;;
+      esac
+   done
+
+   if [ 'prepare' == "$METHOD" ]; then
       sanity_check_local_changes
       local CUR_BRANCH=$(current_branch)
       var_save .pw_pushing CUR_BRANCH "$CUR_BRANCH"
@@ -295,7 +321,7 @@ command_push() {
       fi
       return 0
    fi
-   if [ '--abort' == "$1" ]; then
+   if [ 'abort' == "$METHOD" ]; then
       sanity_check_local_changes
       local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
@@ -307,7 +333,7 @@ command_push() {
       git rebase --preserve-merges --onto master subversion $CUR_BRANCH
       return 0
    fi
-   if [ '--complete' == "$1" ]; then
+   if [ 'complete' == "$METHOD" ]; then
       local CUR_BRANCH=$(var_load .pw_pushing CUR_BRANCH)
       if [ -z "$CUR_BRANCH" ];then
          echo "Error on 'push --complete': No current branch"
@@ -322,15 +348,27 @@ command_push() {
          return 1
       fi
       git merge master # Fast-forward, but only if sync succeeded
+
+      if [[ "$ANDREMOVE" ]]; then
+         git checkout master
+         git branch -d $CUR_BRANCH
+      fi
       return 0
    fi
 
    command_push --prepare
+
+   > SVN_COMMIT_MESSAGE
+   if [[ "$AUTO_MESSAGE" ]]; then
+      git log subversion..HEAD --format=format:"%s%n" >> SVN_COMMIT_MESSAGE
+   elif [[ "$MESSAGE" ]]; then
+      echo "$MESSAGE" >> SVN_COMMIT_MESSAGE
+   fi
    push_generate_message
 
    if push_confirm; then
       if run_svn commit -F SVN_COMMIT_MESSAGE ; then
-         command_push --complete
+         command_push --complete "$ANDREMOVE"
          echo ''
          echo 'Push complete'
       else
@@ -350,7 +388,8 @@ command_push() {
 push_generate_message() {
    local CUR_BRANCH=$(current_branch)
 
-   echo -e '\n' > PATCHWORK_PUSH
+   cat SVN_COMMIT_MESSAGE > PATCHWORK_PUSH
+   echo -e '\n' >> PATCHWORK_PUSH
    echo '# All lines above this first comment will be used as your svn commit message' >> PATCHWORK_PUSH
    echo '# ==================== (git) Files' >> PATCHWORK_PUSH
    git diff --name-status --relative subversion..$CUR_BRANCH >> PATCHWORK_PUSH
