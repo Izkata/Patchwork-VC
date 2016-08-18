@@ -282,6 +282,7 @@ command_push() {
    local METHOD=
    local ANDREMOVE=
    local MESSAGE=
+   local AUTO_MESSAGE=
    while [[ $# > 0 ]]; do
       ARG="$1"
       shift
@@ -294,6 +295,8 @@ command_push() {
          --complete) METHOD='complete'
                      ;;
          --remove)   ANDREMOVE='--remove'
+                     ;;
+         --auto-msg) AUTO_MESSAGE=1
                      ;;
          -m)         ;&
          --message)  MESSAGE="$1"
@@ -355,11 +358,13 @@ command_push() {
 
    command_push --prepare
 
-   if [[ "$MESSAGE" ]]; then
+   > SVN_COMMIT_MESSAGE
+   if [[ "$AUTO_MESSAGE" ]]; then
+      git log subversion..HEAD --format=format:"%s%n" >> SVN_COMMIT_MESSAGE
+   elif [[ "$MESSAGE" ]]; then
       echo "$MESSAGE" >> SVN_COMMIT_MESSAGE
-   else
-      push_generate_message
    fi
+   push_generate_message
 
    if push_confirm; then
       if run_svn commit -F SVN_COMMIT_MESSAGE ; then
@@ -383,7 +388,8 @@ command_push() {
 push_generate_message() {
    local CUR_BRANCH=$(current_branch)
 
-   echo -e '\n' > PATCHWORK_PUSH
+   cat SVN_COMMIT_MESSAGE > PATCHWORK_PUSH
+   echo -e '\n' >> PATCHWORK_PUSH
    echo '# All lines above this first comment will be used as your svn commit message' >> PATCHWORK_PUSH
    echo '# ==================== (git) Files' >> PATCHWORK_PUSH
    git diff --name-status --relative subversion..$CUR_BRANCH >> PATCHWORK_PUSH
