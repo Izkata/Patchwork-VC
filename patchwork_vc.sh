@@ -465,11 +465,7 @@ if [ "$1" == 'init' ]; then
       git init .
 
       echo 'Scanning for non-svn files...'
-      SVN_IGNORE=$(svn stat --no-ignore | grep '^I' | awk '{ print $2 }' | sort)
-      for IGNORE in '.pw/' '.svn/' '*.pyc'; do
-         SVN_IGNORE=$(echo "$SVN_IGNORE" | egrep -v "$IGNORE")
-         echo "$IGNORE"
-      done >> .gitignore
+      SVN_IGNORE=$(svn stat --no-ignore | egrep '^(I|\?)' | awk '{ print $2 }' | sort)
 
       echo 'Collapsing list...'
       EXCLUDE=''
@@ -481,17 +477,20 @@ if [ "$1" == 'init' ]; then
          fi
       done
 
+      echo '/.svn/' > .gitignore
       for FILE in $EXCLUDE; do
          FILE=$(echo $FILE | sed -e 's#^\./##')
          if [ -d "$FILE" ]; then
-            echo "$FILE/"
+            echo "/$FILE/"
          else
-            echo "$FILE"
+            echo "/$FILE"
          fi
       done >> .gitignore
 
-      echo "Check .gitignore and add anything else that should not be version controlled,"
-      echo "then run 'pw init' again."
+      echo ''
+      echo 'Check .gitignore and add anything else that should not be version controlled,'
+      echo 'then run "pw init" again.'
+      echo ''
 
       echo 'init_1' > .pw/stage
       exit 0
