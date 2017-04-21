@@ -451,11 +451,95 @@ command_patch() {
    #    -> $ pw post_push
 }
 
+# ==================== Init new must be run outside of primary options due to .git not existing
+if [ "$1" == 'init' ]; then
+   if [ -e '.git' ] || [ -e '.pw' ];then
+      if ! cat .pw/stage | grep 'init' > /dev/null; then
+         echo "Cannot init a repo here; .git and/or .pw already exist"
+         exit 1
+      fi
+   fi
+
+   if [ ! -e '.pw/' ]; then
+      mkdir .pw/
+      git init .
+
+      echo 'Scanning for non-svn files...'
+      SVN_IGNORE=$(svn stat --no-ignore | egrep '^(I|\?)' | awk '{ print $2 }' | sort)
+
+      echo 'Collapsing list...'
+      EXCLUDE=''
+      for X in $SVN_IGNORE; do
+         NEW_SVN_IGNORE=$(echo "$SVN_IGNORE" | grep -v "^$X")
+         if [ "$SVN_IGNORE" != "$NEW_SVN_IGNORE" ]; then
+            SVN_IGNORE="$NEW_SVN_IGNORE"
+            EXCLUDE="$EXCLUDE $X"
+         fi
+      done
+
+      echo '/.svn/' > .gitignore
+      for FILE in $EXCLUDE; do
+         FILE=$(echo $FILE | sed -e 's#^\./##')
+         if [ -d "$FILE" ]; then
+            echo "/$FILE/"
+         else
+            echo "/$FILE"
+         fi
+      done >> .gitignore
+
+      echo ''
+      echo 'Check .gitignore and add anything else that should not be version controlled,'
+      echo 'then run "pw init" again.'
+      echo ''
+
+      echo 'init_1' > .pw/stage
+      exit 0
+   fi
+
+   if [ 'init_1' == "$(cat .pw/stage)" ];then
+      git add .
+
+      echo 'init_2' > .pw/stage
+
+      if [ ! -z "$(git status --porcelain | grep -v '^A ')" ]; then
+         echo "There are untracked files that don't belong in subversion."
+         echo "This must be resolved manually (likely need more .gitignore rules)."
+         echo "Run 'pw init' again when done."
+         exit 0
+      fi
+   fi
+
+   if [ 'init_2' == "$(cat .pw/stage)" ];then
+      git add .gitignore
+      git commit -m'Subversion import'
+      git branch subversion
+
+      # This is temporary; there is a bug I have yet to bother tracking down
+      touch 'local_change'
+      git add local_change
+      git commit -m"local_change so sync doesn't mess up"
+
+      echo '' > .pw/stage
+      exit 0
+   fi
+
+   if [ "$2" == 'undo' ]; then
+      if [ 'init_2' == "$(cat .pw/stage)" ];then
+         exit 0
+      fi
+      if [ 'init_1' == "$(cat .pw/stage)" ];then
+         exit 0
+      fi
+   fi
+
+   exit 0
+fi
+
 # ==================== Sanity checking
 while ! [ -e '.git' ] && ! [ '/' == "$(pwd)" ];do cd ..;done
 if [ ! -e '.git' ];then
    echo "Cannot be run outside of git repository"
-   exit 1
+   exit 2
 fi
 
 sanity_check_local_changes() {
